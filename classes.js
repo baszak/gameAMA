@@ -41,225 +41,228 @@ function Map(url, w, h){
   
   for (var x=-1; x < w+1; x++) {
 		this.world[x] = [];
-		for (var y=-1; y < h+1; y++)
+		for (var y=-1; y < h+1; y++){
       if(x == -1 || x == w)
         this.world[x][y] = 1;
       else if(y == -1 || y == h+1)
         this.world[x][y] = 1;
       else
         this.world[x][y] = 0;
+    }
 	}
 }
 
-function Player(url, id, opts){
-  var player_default = {
-    id: id || 001,
+function Player(url, id, spawn_x, spawn_y){
+    this.img_knight = new Image(),
+    this.img_knight.src = url || "img/knight.png",
+    this.img_limbo = new Image(),
+    this.img_limbo.src = url || "img/knight_limbo.png",
+  this.data = {
+    id: id || 1,
     name : "Playerino",
+    //player resources
+  	x: spawn_x,
+  	y: spawn_y,
+    tx: spawn_x,
+    ty: spawn_y,
+    direction: 0,
+    //rpg shit
     level : 1,
     experience : 0,
+    expPenalty: 0,
     strength: 1,
-    agility : 1,
+    agility: 1,
     intelligence : 1,
-    skillPoints : 0,
-    healthMax : 100,
-    healthCur : 100,
-    manaMax : 900,
-    manaCur : 900,
-    healthRegen: 3,
-    manaRegen : 300,
+    attrPoints: 0,
+    skillPoints: 0,
+    healthMax: 100,
+    healthCur: 100,
+    manaMax: 900,
+    manaCur: 900,
+    healthRegen: 0,
+    manaRegen: 300,
     mmr: 1400,
-    speed: 400,
+    speedBase: 400,
     speedCur: 400,
     critChance: 0.5,
-    critDamage: 0
-  };
-  $.extend(this,player_default);
-  this.img_knight = new Image();  
-  this.img_knight.src = url || "img/knight.png";
-  this.img_limbo = new Image();
-  this.img_limbo.src = url || "img/knight_limbo.png";
-  this.d = 'right';
-	this.x = 2;
-	this.y = 4;
-	this.tx = this.x;
-	this.ty = this.y;
-  this.moveValid = 1;
-  this.isVisible = true;
-  this.limboState = false;
-  this.dying = false;
-  this.deathTime = frameTime;
-  this.moveQ = new MovementQueue();
-  this.animStart = frameTime;
-  this.lastAttack = frameTime;
-  this.attackCooldown = 800;
-  this.exhausted = 0;
-  this.buffTimer = 0;
-  this.damageInfo = {totalDamage: 0};
-  this.skills = [
-    {cooldown: 0, action: 0},
-    {cooldown: 0, action: 0},
-    {cooldown: 0, action: 0},
-    {cooldown: 0, action: 0}
-  ];
-  this.equipment = {  primary: {damageMin: 0, damageMax: 4, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
-                      secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
-                      body: {},
-                      legs: {},
-                      boots: {},
-                      head: {},
-                      backpack: []
-                    };
+    critDamage: 1,
+    //other shit
+    moveValid: 1,
+    isVisible: true,
+    limboState: false,
+    dying: false,
+    deathTime: frameTime,
+    moveQ: new MovementQueue(),
+    animStart: frameTime,
+    lastAttack: frameTime,
+    attackCooldown: 800,
+    exhausted: 0,
+    buffTimer: 0,
+    damageInfo: {totalDamage: 0},
+    skills: [
+      {cooldown: 0, action: 0},
+      {cooldown: 0, action: 0},
+      {cooldown: 0, action: 0},
+      {cooldown: 0, action: 0}
+    ],
+    equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
+                        secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
+                        body: {},
+                        legs: {},
+                        boots: {speedMod: 0.6},
+                        head: {},
+                        backpack: []
+                      }
+  }
 	this.update = function(){
-    this.ax = (this.tx - this.x) * (frameTime - this.animStart) / this.speedCur;
-    this.ay = (this.ty - this.y) * (frameTime - this.animStart) / this.speedCur;
+    this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
+    this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
     
-    if (Math.abs(this.ax) >= 1) {
-      this.moving = false;
-      this.x = this.tx;
-      this.ax = 0;
+    if (Math.abs(this.data.ax) >= 1) {
+      this.data.moving = false;
+      this.data.x = this.data.tx;
+      this.data.ax = 0;
     }
-    if (Math.abs(this.ay) >= 1) {
-      this.moving = false;
-      this.y = this.ty;
-      this.ay = 0
+    if (Math.abs(this.data.ay) >= 1) {
+      this.data.moving = false;
+      this.data.y = this.data.ty;
+      this.data.ay = 0
     }
     
-    if(!this.moving) {
-      var nextMove = this.moveQ.getMove();
+    if(!this.data.moving) {
+      var nextMove = this.data.moveQ.getMove();
       if(nextMove) {
-        if(!map.isValid(nextMove[0], nextMove[1]) && this.moveQ.getLength() > 0){
-          this.moveQ.findPath(this.x, this.y, clientX, clientY);
-          nextMove = this.moveQ.getMove();
+        if(!map.isValid(nextMove[0], nextMove[1]) && this.data.moveQ.getLength() > 0){
+          this.data.moveQ.findPath(this.data.x, this.data.y, clientX, clientY);
+          nextMove = this.data.moveQ.getMove();
         }
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
-          this.animStart = frameTime;
-          this.moving = true;
-          map.free(this.x, this.y);
-          this.tx = nextMove[0]
-          this.ty = nextMove[1]
-          map.occupy(this.tx, this.ty);
+          this.data.animStart = frameTime;
+          this.data.moving = true;
+          map.free(this.data.x, this.data.y);
+          this.data.tx = nextMove[0]
+          this.data.ty = nextMove[1]
+          map.occupy(this.data.tx, this.data.ty);
         }
       }
     }
+
+    updateStats(this.data);
+    if(this.data.experience<0) this.data.experience = 0;//into level up function soon
     
-    this.speed = 600 - 0.9*(this.level - 1);
-    if(this.speed<80) this.speed = 80;
-    if(this.experience<0) this.experience = 0;
-    
-    this.manaCur = Math.min(this.manaMax, this.manaCur + (frameTime - lastFrame)/1000*this.manaRegen);
-    this.healthCur = Math.min(this.healthMax, this.healthCur + (frameTime - lastFrame)/1000*this.healthRegen);
+
+    //handling regen. to be rewritten into ticks? maybe regen every sec to avoid floats
+    this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
+    this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
+    // socket.emit('players-data-update', this.data);
   }
   this.move = function(dx, dy, dir){
-    if(map.isValid(this.tx + dx, this.ty + dy))
-      this.moveQ.queueMove(this.tx + dx, this.ty + dy);
+    socket.emit('player-input-move', {dx: dx, dy: dy});
+    if(map.isValid(this.data.tx + dx, this.data.ty + dy))
+      this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
   }
   this.attack = function(){ //autoattacks with primary hand
-    if(frameTime - this.lastAttack > (this.attackCooldown * (1 - (this.equipment.primary.speedMod + this.equipment.secondary.speedMod))) && targetedMob && dist(this,targetedMob)<this.equipment.primary.range){
-      //initial damage
-      var damage = (Math.random()*100) % (this.equipment.primary.damageMax - this.equipment.primary.damageMin) + this.equipment.primary.damageMin;
-      var crit = Math.random()<this.critChance?this.critDamage:1;
-      //damage and modifiers
-      damage += damage*this.equipment.primary.damageMod;
-      damage *= crit;
-      if(this.limboState)
-        damage = 0;
-      damage = Math.round(damage);
-      missiles.push(new AttackAnimation(targetedMob, this, this.equipment.primary.type));
-      targetedMob.takeDamage(this, damage);
-      this.lastAttack = frameTime;
+    if(!this.data.limboState){
+      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data,targetedMob)<this.data.equipment.primary.range){
+        var damage = calcDamage(this.data, targetedMob)
+        missiles.push(new AttackAnimation(targetedMob, this.data, this.data.equipment.primary.type));
+        targetedMob.takeDamage(this.data, damage);
+        this.data.lastAttack = frameTime;
+      }
     }
   }
   this.takeDamage = function(attacker, damage, debuff){
     if(attacker instanceof Shroom)
-      this.isDrugged = true;
-    var dmg = Math.min(damage, this.healthCur);
+      this.data.isDrugged = true;
+    var dmg = Math.min(damage, this.data.healthCur);
 
-    popups.push(new numberPopup(this, Math.round(dmg), 'damage', 1200));
+    popups.push(new numberPopup(this.data, Math.round(dmg), 'damage', 1200));
     
-    this.healthCur -= dmg;
-    this.attacker = attacker.id;
+    this.data.healthCur -= dmg;
+    this.data.attacker = attacker.id;
 
-    this.damageInfo[this.attacker] = this.damageInfo[this.attacker] || 0;
-    this.damageInfo[this.attacker] += dmg;
-    this.damageInfo.totalDamage += dmg;
+    this.data.damageInfo[this.data.attacker] = this.data.damageInfo[this.data.attacker] || 0;
+    this.data.damageInfo[this.data.attacker] += dmg;
+    this.data.damageInfo.totalDamage += dmg;
 
-    if(this.healthCur <= 0 && !this.isDead){
-      // this.die();
+    if(this.data.healthCur <= 0 && !this.data.isDead){
+      this.die();
     }
   }
   this.die = function(){
-    this.deathTime = new Date().getTime();
-    this.isDrugged = false;
-    webFilter.clearFilters();
-    this.dying = true;
-    this.limboState = true;
-    this.isVisible = false;
+    this.data.deathTime = new Date().getTime();
+    this.data.isDrugged = false;
+    webFilter.die();
+    this.data.dying = true;
+    this.data.limboState = true;
+    this.data.isVisible = false;
   }
-  this.img = 0;
 	this.draw = function(ctx){  
-      if(this.x < this.tx)
-        this.img = 3;
-      else if(this.x > this.tx)
-        this.img = 2;
-      else if(this.y < this.ty)
-        this.img = 0;
-      else if(this.y > this.ty)
-        this.img = 1;
+      if(this.data.x < this.data.tx)
+        this.data.direction = 3;
+      else if(this.data.x > this.data.tx)
+        this.data.direction = 2;
+      else if(this.data.y < this.data.ty)
+        this.data.direction = 0;
+      else if(this.data.y > this.data.ty)
+        this.data.direction = 1;
     
-    if(this.limboState)
-      ctx.drawImage(this.img_limbo, this.img*32, 0, 32, 32, (this.x+this.ax)*gh, (this.y+this.ay)*gh, gh, gh);
+    if(this.data.limboState)
+      ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
     else
-      ctx.drawImage(this.img_knight, this.img*16, 0, 16, 16, (this.x+this.ax)*gh, (this.y+this.ay)*gh, gh, gh);
+      ctx.drawImage(this.img_knight, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
 
 	}
   this.slot_1 = function(){
-    if(playerIsReady.call(this, 8, 200)){
-      if(this.skills[0].cooldown <= frameTime || this.skills[0].cooldown == 0)
-        this.skills[0].action = missiles.push(new Fireball(targetedMob, 0));
+    if(playerIsReady(this.data, 8, 200)){
+      if(this.data.skills[0].cooldown <= frameTime || this.data.skills[0].cooldown == 0)
+        this.data.skills[0].action = missiles.push(new Fireball(targetedMob, 0));
       else
         statusMessage.showMessage("You are exhausted! ", 1000);
     }
   }
   this.slot_2 = function(){
-    if(playerIsReady.call(this, 6, 200)){
-      if(this.skills[1].cooldown <= frameTime || this.skills[1].cooldown == 0)
-        this.skills[1].action = missiles.push(new RocketLauncher(targetedMob, 1));
+    if(playerIsReady(this.data, 6, 200)){
+      if(this.data.skills[1].cooldown <= frameTime || this.data.skills[1].cooldown == 0)
+        this.data.skills[1].action = missiles.push(new RocketLauncher(targetedMob, 1));
       else
         statusMessage.showMessage("You are exhausted! ", 1000);
     }
   }
 
   this.slot_3 = function(){
-    if(this.exhausted > frameTime) {
-      statusMessage.showMessage("You are exhausted! " + (this.exhausted-frameTime) + "ms left", 1000);
-    } else if(this.manaCur <600){
+    if(this.data.exhausted > frameTime) {
+      statusMessage.showMessage("You are exhausted! " + (this.data.exhausted-frameTime) + "ms left", 1000);
+    } else if(this.data.manaCur <600){
       statusMessage.showMessage("Not enough mana!", 1000);
     } else {
-      this.manaCur -= 600;
+      this.data.manaCur -= 600;
       missiles.push(new Explosion());
     }
   }
-  this.slot_4 = function(){
-    if(this.exhausted > frameTime) {
-      statusMessage.showMessage("You are exhausted! " + (this.exhausted-frameTime) + "ms left", 1000);
-    } else if(this.manaCur < 100){
+  this.slot_4 = function(){ //dev's regen hp
+    if(this.data.exhausted > frameTime) {
+      statusMessage.showMessage("You are exhausted! " + (this.data.exhausted-frameTime) + "ms left", 1000);
+    } else if(this.data.manaCur < 100){
       statusMessage.showMessage("Not enough mana!", 1000);
-    } else if(this.speed == this.speedCur){
-      this.buffTimer = new Date().getTime();
-      this.manaCur -= 100;
-      this.exhausted = frameTime + 500;
-      this.speedCur *= 0.65;
+    } else if(this.data.speedBase == this.data.speedCur){
+      this.data.buffTimer = new Date().getTime();
+      this.data.manaCur -= 100;
+      this.data.exhausted = frameTime + 500;
+      this.data.speedCur *= 0.35;
       webFilter.clearFilters();
     } else{
-      this.buffTimer = new Date().getTime();
-      this.manaCur -= 60;
-      this.exhausted = frameTime + 500;
-      this.buffTimer += 12000;
+      this.data.buffTimer = new Date().getTime();
+      this.data.manaCur -= 60;
+      this.data.healthCur += 50;
+      this.data.speedCur *= 0.35;
+      this.data.exhausted = frameTime + 500;
+      this.data.buffTimer += 12000;
       webFilter.clearFilters();
     }
-    var healValue = Math.min(players[0].healthMax-players[0].healthCur, 230);
-    players[0].healthCur += healValue;
-    popups.push(new numberPopup(this, healValue, 'heal', 1200));
+    var healValue = Math.min(this.data.healthMax-this.data.healthCur, 230);
+    this.data.healthCur += healValue;
+    popups.push(new numberPopup(this.data, healValue, 'heal', 1200));
   }
   this.slot_5 = function(){
 
@@ -290,15 +293,16 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.leeshTimer = frameTime;
   this.animStart = frameTime;
   this.animationSpeed = 200;
-  this.spriteX = spriteX || 84;
+  this.spriteX = spriteX || 84; 
   this.spriteY = spriteY || 84;
-  this.spriteN = spriteN || 8;
+  this.spriteN = spriteN || 8; //number of animation frames
   this.lastMoved = frameTime;
   this.lastAttack = frameTime;
   this.attackCooldown = 1750;
   this.damageInfo = {totalDamage: 0};
   this.damageMin = 15;
   this.damageMax = 45;
+  this.defenseRating = 0;
   this.loot = {gold: 0, silver: 0, copper: Math.floor(Math.random()*100)%25};
   
   map.occupy(this.x, this.y);
@@ -339,10 +343,10 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     
     if(this.aggro){
         if(!this.moving){
-          this.moveQ.findPath(this.tx, this.ty, players[0].tx, players[0].ty);
+          this.moveQ.findPath(this.tx, this.ty, player1.data.tx, player1.data.ty);
           if(!this.moveQ.getLength())
             this.aggro = false;
-          if(Math.max(Math.abs(this.ty-players[0].ty),Math.abs(this.tx-players[0].tx))>1){
+          if(Math.max(Math.abs(this.ty-player1.data.ty),Math.abs(this.tx-player1.data.tx))>1){
             var nextMove;
             if((nextMove = this.moveQ.getMove())){
               this.rlyMove(nextMove[0],nextMove[1]);
@@ -380,22 +384,22 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 
     }
     else if(this.type == 1){ //aggressive
-      if(dist(this, players[0])<this.aggroRange && players[0].isVisible){
+      if(dist(this, player1.data)<this.aggroRange && player1.data.isVisible){
         this.aggro = true;
         this.leeshTimer = new Date().getTime();
       }
-      if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, players[0]) > 10){
+      if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, player1.data) > 10){
         this.aggro = false;
       }
-      if(!players[0].isVisible)
+      if(!player1.data.isVisible)
         this.aggro = false;
     }
 
   }
   this.attack = function(){
-    if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(players[0], this)<1.45){
+    if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(player1.data, this)<1.45){
       var damage = Math.round((Math.random()*100) % (this.damageMax-this.damageMin) + this.damageMin);
-      players[0].takeDamage(this, damage);
+      player1.data.takeDamage(this, damage);
       this.onHit();
       this.lastAttack = frameTime;
     }
@@ -432,12 +436,13 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     if(this.healthCur <= 0)
       this.die(attacker);
   }
-  this.die = function(attacker){
+  this.die = function(killer){//do kurwy dlaczego to jest tutaj -Adam
     for(var i=0; i<mobzz.length; i++){
       if(mobzz[i] == this){
         for(var j = 0; j<players.length; j++){
-          var exp = 0.5 * this.exp * (this.damageInfo[players[j].id]/this.damageInfo.totalDamage) + (players[j]==attacker?0.5*this.exp:0);
+          var exp = 0.5 * this.exp * (this.damageInfo[players[j].id]/this.damageInfo.totalDamage) + (players[j]==killer?0.5*this.exp:0);
           if(!exp) continue;
+          exp = Math.floor(exp);
           players[j].experience += exp;
           popups.push(new numberPopup(players[j], exp, 'exp', 1800));
         }
@@ -465,7 +470,7 @@ function AudioManager(){
   this.update = function(){
     for(var i = 0; i<loc_audios.length; i++) {
       var entry = loc_audios[i];
-      if(isPointWithin(entry.area,players[0]) && !entry.active){
+      if(isPointWithin(entry.area,player1.data) && !entry.active){
         entry.audio.play();
         if(!entry.oneshot)
           fadeOut(entry.audio, 'volume', 0, 1, 5000);
@@ -473,7 +478,7 @@ function AudioManager(){
           entry.audio.currentTime = 0;
         entry.active = true;
       }
-      else if (!isPointWithin(entry.area,players[0]) && entry.active){
+      else if (!isPointWithin(entry.area,player1.data) && entry.active){
         if(!entry.oneshot){
           fadeOut(entry.audio, 'volume', 1, 0, 3000, function(a){return function(){a.pause();}}(entry.audio));
         }
@@ -486,22 +491,14 @@ function AudioManager(){
 function ExperienceBar(){
   this.img = new Image();
   this.img.src = 'img/fullxpBar.png';
-  this.levelUpFormula = function(level){
-    return (50*(level*level-5*level+8));
-  }
-  this.levelExpFormula = function(level){
-    return ((50/3)*(level*level*level-6*level*level+17*level-12));
-  }
   this.update = function(){
-  this.expPercent = ((players[0].experience - this.levelExpFormula(players[0].level))/this.levelUpFormula(players[0].level+1));
+  this.expPercent = ((player1.data.experience - levelExpFormula(player1.data.level))/levelUpFormula(player1.data.level+1));
     if(this.expPercent < 0) this.expPercent = 0;
-    if(players[0].experience >= this.levelExpFormula(players[0].level+1)){
-      players[0].level++;
-      statusMessage.showMessage("You advanced to level " + players[0].level, 3000);
+    if(player1.data.experience >= levelExpFormula(player1.data.level+1)){
+      levelUp(player1.data);
     }
-    else if(players[0].experience < this.levelExpFormula(players[0].level)){
-      players[0].level--;
-      statusMessage.showMessage("You feel weaker with each defeat", 3000);
+    else if(player1.data.experience < levelExpFormula(player1.data.level)){
+      levelDown(player1.data);
     }
   }
 
@@ -525,9 +522,9 @@ function ActionBar(){
     ctx.arc(canvas.width/2 - 280 - 60, canvas.height - 70, 60, 0, 2*Math.PI);  
     var gradientRed=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
     gradientRed.addColorStop("0","rgba(0,0,0,0)");
-    gradientRed.addColorStop(Math.max(1 - players[0].healthCur/players[0].healthMax - 0.05,0),"rgba(0,0,0,0)");
-    gradientRed.addColorStop(1 - players[0].healthCur/players[0].healthMax,"rgba(255,0,0,0.5)");
-    gradientRed.addColorStop(Math.min(1 - players[0].healthCur/players[0].healthMax + 0.05,1),"rgba(255,0,0,0.9)");
+    gradientRed.addColorStop(Math.max(1 - player1.data.healthCur/player1.data.healthMax - 0.05,0),"rgba(0,0,0,0)");
+    gradientRed.addColorStop(1 - player1.data.healthCur/player1.data.healthMax,"rgba(255,0,0,0.5)");
+    gradientRed.addColorStop(Math.min(1 - player1.data.healthCur/player1.data.healthMax + 0.05,1),"rgba(255,0,0,0.9)");
     gradientRed.addColorStop("1.0","rgba(255,0,0,0.9)");
     ctx.fillStyle = gradientRed;
     ctx.fill();
@@ -536,28 +533,28 @@ function ActionBar(){
     ctx.arc(canvas.width/2 + 270 + 60, canvas.height - 70, 60, 0, 2*Math.PI);
     var gradientBlue=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
     gradientBlue.addColorStop("0","rgba(0,0,0,0)");
-    gradientBlue.addColorStop(Math.max(1 - players[0].manaCur/players[0].manaMax - 0.05,0),"rgba(0,0,0,0)");
-    gradientBlue.addColorStop(1 - players[0].manaCur/players[0].manaMax,"rgba(0,0,255,0.5)");
-    gradientBlue.addColorStop(Math.min(1 - players[0].manaCur/players[0].manaMax + 0.05,1),"rgba(0,0,255,0.9)");
+    gradientBlue.addColorStop(Math.max(1 - player1.data.manaCur/player1.data.manaMax - 0.05,0),"rgba(0,0,0,0)");
+    gradientBlue.addColorStop(1 - player1.data.manaCur/player1.data.manaMax,"rgba(0,0,255,0.5)");
+    gradientBlue.addColorStop(Math.min(1 - player1.data.manaCur/player1.data.manaMax + 0.05,1),"rgba(0,0,255,0.9)");
     gradientBlue.addColorStop("1.0","rgba(0,0,255,0.9)");
     ctx.fillStyle = gradientBlue;
     ctx.fill();
     
     ctx.drawImage(this.img, canvas.width/2-520,canvas.height-140, 1040, 144)
     ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
-    if(frameTime - players[0].skills[0].cooldown < 0)
-      ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-players[0].skills[0].cooldown+2000)/2000, 248, -248*(frameTime-players[0].skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-players[0].skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-players[0].skills[0].cooldown)/2000);
-      // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-players[0].exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-players[0].exhausted+1000)/1000);
-      // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-players[0].exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-players[0].exhausted)/2000);
+    if(frameTime - player1.data.skills[0].cooldown < 0)
+      ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
+      // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
+      // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
       /* dont delete those */
     ctx.drawImage(this.img_border, canvas.width/2-262, canvas.height-59, 38, 38);
   }
 }
 
-function numberPopup(unit, content, type, duration){
+function numberPopup(unitdata, content, type, duration){
     this.type = type;
-    this.x = unit.x;
-    this.y = unit.y;
+    this.x = unitdata.x;
+    this.y = unitdata.y;
     this.susp = (this.y)*gh - 3;
     this.content = content;
     this.messageTime = frameTime + duration;
@@ -595,25 +592,24 @@ function numberPopup(unit, content, type, duration){
     }
   }
 }
-function TooltipMessage(canvas) { //not finished
-  this.canvas = canvas;
-  this.elem = document.createElement("div");
-  this.elem.class = "exp";
-  this.elem.style.position = "absolute";
-  this.elem.style.left = "240px";
-  this.elem.style.top = canvas.height-75 + "px";
-  this.elem.style.height = "10px";
-  this.elem.style.width = "540px";  
-  // this.elem.style.background = "#000";
-  this.elem.style.color = "#fff";
-  document.getElementById("c1").appendChild(this.elem);
+// function TooltipMessage(canvas) { //not finished
+//   this.canvas = canvas;
+//   this.elem = document.createElement("div");
+//   this.elem.class = "exp";
+//   this.elem.style.position = "absolute";
+//   this.elem.style.left = "240px";
+//   this.elem.style.top = canvas.height-75 + "px";
+//   this.elem.style.height = "10px";
+//   this.elem.style.width = "540px";  
+//   this.elem.style.background = "#000";
+//   this.elem.style.color = "#fff";
+//   document.getElementById("c1").appendChild(this.elem);
 
-  this.update = function(){
-  }
-  this.showMessage = function(){
-  }
-}
-function StatusMessage(canvas) {
+//   this.showMessage = function(){
+//     console.log("current xp: " + player1.data.experience + "/" + experienceBar.levelExpFormula(player1.data.level+1));
+//   }
+// }
+function StatusMessage(canvas) {//client only
   this.message = "The game is ready for you";
   this.messageTime = frameTime + 3000;
   this.active = true;
@@ -649,7 +645,7 @@ function StatusMessage(canvas) {
   }
 }
 
-function MonsterSpawner(){
+function MonsterSpawner(){//server only
   var k = 0;
   this.spawns = [];
 
@@ -675,7 +671,7 @@ function MonsterSpawner(){
     }
   }
 }
-function AttackAnimation(target, caller, type){
+function AttackAnimation(target, caller, type){//client only
   this.img_sword = new Image();
   this.img_sword.src = "img/slash_sword.png";
   this.img_2hsword = new Image();
@@ -717,18 +713,19 @@ function FilterManager(){
   this.fadeTime = 2000;
   this.update = function(type){
   }
-  this.limbo = function(){
+  this.die = function(){
+    console.log('dying')
     if(this.val1 != 1){
-      this.val1 = (Math.floor(frameTime - players[0].deathTime)%this.fadeTime)/this.fadeTime;
+      this.val1 = (Math.floor(frameTime - player1.data.deathTime)%this.fadeTime)/this.fadeTime;
       this.val2 = 1 - 0.3*this.val1;
     }
       canvas.style.cssText="-webkit-filter:grayscale("+this.val1+") brightness("+this.val2+")";
       if(this.val1.toFixed(3) > 0.99)
-        players[0].dying = false;
+        player1.data.dying = false;
   }
   this.clearFilters = function(){
     canvas.style.cssText="-webkit-filter:none";
-    players[0].isDrugged = false;
+    player1.data.isDrugged = false;
   }
 }
 function EntityManager(){
@@ -748,7 +745,7 @@ function EntityManager(){
         for(item in loot){
           var t = {};
           t[item] = loot[item];
-          players[0].equipment.backpack.push(t);
+          player1.data.equipment.backpack.push(t);
           console.log("looted " + item + ":" + loot[item]);
         }
         for(var i =0; i< entities.allEntities.length; i++){
@@ -769,3 +766,5 @@ function EntityManager(){
     this.allEntities = [];
   }
 }
+
+//create function returning damage, taking attacker and attacked as arguments

@@ -92,21 +92,41 @@ function MovementQueue(){
 		return this.currentPath.shift();
 	}
 }
-function loadJSON(path, success, error)
-{
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function()
-    {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-                if (success)
-                    success(JSON.parse(xhr.responseText));
-            } else {
-                if (error)
-                    error(xhr);
-            }
-        }
-    };
-    xhr.open("GET", path, true);
-    xhr.send();
+function calcDamage(attacker, enemy){
+	var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
+	var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
+	baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
+	baseDamage -= enemy.defenseRating;//basically damage absorbtion
+	var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
+	damage += damage*attacker.equipment.primary.damageMod;
+	return (damage>=0)?Math.round(damage):0;//keep it in integers
+}
+function updateStats(player){
+	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
+}
+function levelUp(player){
+	player.level++;
+	if(player.level>9)
+		player.skillPoints++;
+	player.attrPoints += 3;
+	player.speedBase = 600 - 0.9*(player.level - 1);
+  statusMessage.showMessage("You advanced to level " + player.level, 3000);
+}
+function levelDown(player){
+//this should technically never happen
+//for there is currently no way to lose xp
+	player.level--;
+	statusMessage.showMessage("You feel weaker with each defeat", 3000);
+}
+function deathPenalty(player){
+
+}
+function spendAttrPoints(str, agi, int){//do when grid/windows are implemented
+
+}
+function levelUpFormula(level){//xp needed for the next lvl
+  return (50*(level*level-5*level+8));
+}
+function levelExpFormula(level){//
+  return ((50/3)*(level*level*level-6*level*level+17*level-12));
 }

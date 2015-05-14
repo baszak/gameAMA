@@ -1,13 +1,10 @@
-function populateMobs(){
-  spawner.createSpawn(Ahmed, 50, 60, 5);
-  spawner.createSpawn(Bat, 65, 59, 5);
-  spawner.createSpawn(Dummy, 40, 55, 5);
-  spawner.createSpawn(BigBat, 68, 58, 5);
-  spawner.createSpawn(Bat, 7, 9, 0);
-  spawner.createSpawn(Bat, 19, 18, 0);
-  spawner.createSpawn(Bat, 12, 20, 5);
-  spawner.createSpawn(Bat, 12, 9, 5);
-  spawner.createSpawn(Shroom, 70, 70, 5);
+function populateMobs(spawner){
+  // for(var i = 0; i< 10000; i++)
+  spawner.createSpawn(Bat, 7, 9, 5);
+  spawner.createSpawn(Bat, 19, 18, 45);
+  spawner.createSpawn(Bat, 12, 20, 45);
+  spawner.createSpawn(Bat, 12, 9, 45);
+  spawner.createSpawn(Shroom, 33, 6, 45);
 }
 function Ahmed(id, spawn_x, spawn_y){
   Foe.call(this,'Ahmed','img/ahmed_sprite.png',id,spawn_x,spawn_y,true);
@@ -24,6 +21,7 @@ function BigBat(id, spawn_x, spawn_y){
   this.speed -= 130;
   this.damageMin = 85;
   this.damageMax = 245;
+  this.defenseRating = 9;
 }
 BigBat.prototype = Object.create(Foe.prototype);
 BigBat.prototype.constructor = BigBat;
@@ -33,9 +31,10 @@ function Bat(id, spawn_x, spawn_y){
   Foe.call(this,'Bat','img/bat_sprite.png',id,spawn_x,spawn_y,true);
   this.healthMax = 20;
   this.healthCur = 20;
-  this.exp = 5;
+  this.exp = 1000;
   this.damageMin = 0;
   this.damageMax = 6;
+  this.defenseRating = 2;
 }
 Bat.prototype = Object.create(Foe.prototype);
 Bat.prototype.constructor = Bat;
@@ -57,6 +56,9 @@ Goblin.prototype.constructor = Goblin;
 
 function Dummy(id, spawn_x, spawn_y){
   Foe.call(this,'Dummy','img/training_dummy.png',id,spawn_x,spawn_y,false);
+  this.draw = function(ctx){
+    ctx.drawImage(this.img, (this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
+  }
 }
 Dummy.prototype = Object.create(Foe.prototype);
 Dummy.prototype.constructor = Dummy;

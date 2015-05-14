@@ -1,11 +1,11 @@
-function playerIsReady(range, mana){
+function playerIsReady(player, range, mana){
   if(!targetedMob) {
       statusMessage.showMessage("No target!", 1000);
-    } else if(this.exhausted > frameTime) {
+    } else if(player.exhausted > frameTime) {
       statusMessage.showMessage("You are exhausted! ", 1000);
-    } else if(dist(this,targetedMob) > range) {
+    } else if(dist(player,targetedMob) > range) {
       statusMessage.showMessage("Target out of range!", 1000);
-    } else if(this.manaCur < mana) {
+    } else if(player.manaCur < mana) {
       statusMessage.showMessage("Not enough mana!", 1000);
     } else
       return 1;
