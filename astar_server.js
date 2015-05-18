@@ -1,4 +1,4 @@
-function findPath(world, pathStart, pathEnd)
+module.exports = function findPath(world, pathStart, pathEnd)
 {
 	// shortcuts for speed
 	var	abs = Math.abs;

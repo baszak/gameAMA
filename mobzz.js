@@ -1,3 +1,6 @@
+var tempImg = new Image();
+tempImg.src = 'bat_sprite.png';
+
 function populateMobs(spawner){
   // for(var i = 0; i< 10000; i++)
   spawner.createSpawn(Bat, 7, 9, 5);

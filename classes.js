@@ -52,9 +52,11 @@ function Map(url, w, h){
 	}
 }
 
-function Player(url, id, spawn_x, spawn_y){
+function Player(url, id, spawn_x, spawn_y, data_from_server){
     this.img_knight = new Image(),
     this.img_knight.src = url || "img/knight.png",
+    this.img_knight_green = new Image(),
+    this.img_knight_green.src = url || "img/knight_green.png",
     this.img_limbo = new Image(),
     this.img_limbo.src = url || "img/knight_limbo.png",
   this.data = {
@@ -399,7 +401,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.attack = function(){
     if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(player1.data, this)<1.45){
       var damage = Math.round((Math.random()*100) % (this.damageMax-this.damageMin) + this.damageMin);
-      player1.data.takeDamage(this, damage);
+      player1.takeDamage(this, damage);
       this.onHit();
       this.lastAttack = frameTime;
     }
@@ -411,9 +413,8 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 		ogre_squeal.play();
 	}
 	this.draw = function(ctx){
-
-      this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.spriteN;
-      ctx.drawImage(this.img, this.animationFrame*this.spriteX, 0, this.spriteX, this.spriteY, (this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
+    this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.spriteN;
+    ctx.drawImage(this.img, this.animationFrame*this.spriteX, 0, this.spriteX, this.spriteY, (this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
     if(targetedMob==this){
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
       ctx.strokeRect((this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
@@ -644,11 +645,17 @@ function StatusMessage(canvas) {//client only
     this.active = true;    
   }
 }
-
 function MonsterSpawner(){//server only
   var k = 0;
   this.spawns = [];
-
+  this.populateMobs = function(){
+  // for(var i = 0; i< 10000; i++)
+  this.createSpawn(Bat, 7, 9, 5);
+  this.createSpawn(Bat, 19, 18, 45);
+  this.createSpawn(Bat, 12, 20, 45);
+  this.createSpawn(Bat, 12, 9, 45);
+  this.createSpawn(Shroom, 33, 6, 45);
+}
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
       foe_class: foe_class,

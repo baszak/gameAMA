@@ -1,7 +1,9 @@
 var io = require('socket.io')(6767);
 var fs = require('fs');
 var gameloop = require('node-gameloop');
-// require('./foe_server.js');
+var findPath = require('./astar_server.js');
+// var Player = require('./player_server.js');
+// var foe = require('./foe_server.js');
 // require('./player_server.js');
 // require('./classes_server.js');
 // require('./mobzz.js');
@@ -9,14 +11,14 @@ var gameloop = require('node-gameloop');
 
 var gh = 32;
 var game_size = {w: 32, h: 16};
+var frameTime = new Date().getTime();
+var lastFrame = new Date().getTime();
 console.log("Listening on 6767...");
 var map = new Map(75, 75);
 map.loadCollisions();
 var mobzz = [];
 var spawner = new MonsterSpawner();
-// populateMobs(spawner);
-var frameTime = new Date().getTime();
-var lastFrame = new Date().getTime();
+spawner.populateMobs();
 var clients = {};
 var allPlayers = {};
 var onlinePlayersData = {};
@@ -46,25 +48,30 @@ io.on('connection', function (socket) {
 			socket.emit('player-login-failure', new_player_id);
 		}
 	});
-  socket.on('players-data-update', function (data) {
+  socket.on('players-data-update', function (data) {//not used
   	onlinePlayersData[socket.id] = data;
 
   });
   socket.on('player-input-move', function (data){
-  	var id = onlinePlayersData[socket.id].id;
-  	allPlayers[id].move(data.dx, data.dy);
+  	if(onlinePlayersData.hasOwnProperty(socket.id)){
+	  	var id = onlinePlayersData[socket.id].id;
+	  	allPlayers[id].move(data.dx, data.dy);
+	  }
   });
   socket.on('request-map-world', function(){
   	socket.emit('send-map-world', map.world);
   });
   socket.on('disconnect', function () { //crashes when a game was running when server started and disconncted
-    delete clients[socket.id];
-    	var id = onlinePlayersData[socket.id].id;
-    //pull disconnecting player back into database.
-    console.log('disconnecting' + id);
-    allPlayers[id].data = onlinePlayersData[socket.id];
-    //no longer update player that disconnected.
-    delete onlinePlayersData[socket.id];
+    if(onlinePlayersData.hasOwnProperty(socket.id)){
+	    delete clients[socket.id];
+	    var id = onlinePlayersData[socket.id].id;
+	    //pull disconnecting player back into database.
+	    console.log('disconnecting' + id);
+      map.free(allPlayers[id].data.x, allPlayers[id].data.y);
+	    allPlayers[id].data = onlinePlayersData[socket.id];
+	    //no longer update player that disconnected.
+	    delete onlinePlayersData[socket.id];
+	  }
   });
 });
 
@@ -81,8 +88,9 @@ var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/up
 			continue;
 		allPlayers[onlinePlayersData[i].id].update();
 	}
-	for(var i=0; i < mobzz.length; i++) mobzz[i].update();
+
 	spawner.update();
+  for(var i=0; i < mobzz.length; i++) mobzz[i].update();
 
 
 
@@ -96,9 +104,10 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
 //emit mobs
 //emit other player positions - done
 
-
+	// console.log('mobzz.length  ' + mobzz.length);
+	// console.log("spawner.spawns.length  " + spawner.spawns.length);
 	for(var sId in clients)
-		io.to(sId).emit('players-data-update', onlinePlayersData);
+		io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz});
 
 }, 1000/22);
 
@@ -151,7 +160,14 @@ function Map(h, w){
 function MonsterSpawner(){//server only
   var k = 0;
   this.spawns = [];
-
+	this.populateMobs = function(){
+  // for(var i = 0; i< 10000; i++)
+  this.createSpawn(Bat, 7, 9, 5);
+  this.createSpawn(Bat, 19, 18, 45);
+  this.createSpawn(Bat, 12, 20, 45);
+  this.createSpawn(Bat, 12, 9, 45);
+  // this.createSpawn(Shroom, 33, 6, 45);
+}
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
       foe_class: foe_class,
@@ -166,6 +182,7 @@ function MonsterSpawner(){//server only
     for(var i = 0; i < this.spawns.length; i++) {
       if(!this.spawns[i].foe && frameTime - this.spawns[i].died_at > this.spawns[i].respawn_time*1000) {
         this.spawns[i].foe = new this.spawns[i].foe_class(k++,this.spawns[i].spawn_x,this.spawns[i].spawn_y)        
+        console.log('pushing monster to mobzz');
         mobzz.push(this.spawns[i].foe);
       }else if(this.spawns[i].foe && this.spawns[i].foe.isDead) {
         this.spawns[i].died_at = frameTime;
@@ -260,7 +277,7 @@ function Player(id, spawn_x, spawn_y){
     if (Math.abs(this.data.ay) >= 1) {
       this.data.moving = false;
       this.data.y = this.data.ty;
-      this.data.ay = 0
+      this.data.ay = 0;
     }
     
     if(!this.data.moving) {
@@ -274,8 +291,8 @@ function Player(id, spawn_x, spawn_y){
           this.data.animStart = frameTime;
           this.data.moving = true;
           map.free(this.data.x, this.data.y);
-          this.data.tx = nextMove[0]
-          this.data.ty = nextMove[1]
+          this.data.tx = nextMove[0];
+          this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
         }
       }
@@ -293,7 +310,7 @@ function Player(id, spawn_x, spawn_y){
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
   }
-  this.attack = function(){ //autoattacks with primary hand
+  this.attack = function(){ //rewrite to serverside
     if(!this.data.limboState){
       if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data,targetedMob)<this.data.equipment.primary.range){
         var damage = calcDamage(this.data, targetedMob)
@@ -307,8 +324,6 @@ function Player(id, spawn_x, spawn_y){
     if(attacker instanceof Shroom)
       this.data.isDrugged = true;
     var dmg = Math.min(damage, this.data.healthCur);
-
-    popups.push(new numberPopup(this.data, Math.round(dmg), 'damage', 1200));
     
     this.data.healthCur -= dmg;
     this.data.attacker = attacker.id;
@@ -324,7 +339,6 @@ function Player(id, spawn_x, spawn_y){
   this.die = function(){
     this.data.deathTime = new Date().getTime();
     this.data.isDrugged = false;
-    webFilter.die();
     this.data.dying = true;
     this.data.limboState = true;
     this.data.isVisible = false;
@@ -384,9 +398,8 @@ function Player(id, spawn_x, spawn_y){
 
   }
 }
-function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN){
-  this.img = new Image();
-  this.img.src = url;
+function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN){//need to make separate check for player and other mobs positions regarding collisions
+  this.imgUrl = url;
 	this.name = name;
   this.id = id;
   this.x = spawn_x || 10;
@@ -403,6 +416,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.ty = this.y;
   this.mobile = mobile;
   this.moveQ = new MovementQueue();
+  this.targetId;
   this.aggro = false;
   this.aggroRange = 4;
   this.leeshTimer = frameTime;
@@ -458,10 +472,10 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     
     if(this.aggro){
         if(!this.moving){
-          this.moveQ.findPath(this.tx, this.ty, players[0].tx, players[0].ty);
+          this.moveQ.findPath(this.tx, this.ty, allPlayers[this.targetId].data.tx, allPlayers[this.targetId].data.ty);
           if(!this.moveQ.getLength())
             this.aggro = false;
-          if(Math.max(Math.abs(this.ty-players[0].ty),Math.abs(this.tx-players[0].tx))>1){
+          if(Math.max(Math.abs(this.ty-allPlayers[this.targetId].data.ty),Math.abs(this.tx-allPlayers[this.targetId].data.tx))>1){
             var nextMove;
             if((nextMove = this.moveQ.getMove())){
               this.rlyMove(nextMove[0],nextMove[1]);
@@ -475,18 +489,18 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.passiveMovement = function(){
     if(frameTime-this.lastMoved > this.moveInterval){
       if(Math.random()<0.5){
-        var cx = (Math.random() < (this.x - spawn_x + 4)/8)?1:-1;
+        var cx = (Math.random() < (this.x - this.spawnPoint.x + 4)/8)?1:-1;
         if(map.isValid(this.x-cx, this.y)){
           if(!this.moving){
-            this.rlyMove(this.x - cx,this.ty);
+            this.rlyMove(this.x - cx, this.ty);
           }
         }
       }
       else{
-        var cy = (Math.random() < (this.y - spawn_y + 4)/8)?1:-1;
+        var cy = (Math.random() < (this.y - this.spawnPoint.y + 4)/8)?1:-1;
         if(map.isValid(this.x, this.y-cy)){
           if(!this.moving){
-            this.rlyMove(this.tx,this.y - cy);
+            this.rlyMove(this.tx, this.y - cy);
           }
         }
       }
@@ -499,71 +513,82 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 
     }
     else if(this.type == 1){ //aggressive
-      if(dist(this, players[0])<this.aggroRange && players[0].isVisible){
-        this.aggro = true;
-        this.leeshTimer = new Date().getTime();
+      if(this.targetId){//check if target is lost
+        if(!allPlayers[this.targetId].data.isVisible){//that only means player is dead. for now.
+          this.targetId = null;
+          this.aggro = false;
+        }
+        else if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, allPlayers[this.targetId].data) > 10){
+          this.targetId = null;
+          this.aggro = false;
+        }
       }
-      if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, players[0]) > 10){
-        this.aggro = false;
+      else{//no target -> look for target
+        for(var i in onlinePlayersData){
+          var id = onlinePlayersData[i].id;
+          if(dist(this, allPlayers[id].data) < this.aggroRange && allPlayers[id].data.isVisible){
+            this.aggro = true;
+            this.targetId = id;
+            this.leeshTimer = new Date().getTime();
+            break;
+          }
+        }
       }
-      if(!players[0].isVisible)
-        this.aggro = false;
     }
-
   }
   this.attack = function(){
-    if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(players[0], this)<1.45){
+    if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(allPlayers[this.targetId].data, this)<1.45){
       var damage = Math.round((Math.random()*100) % (this.damageMax-this.damageMin) + this.damageMin);
-      players[0].takeDamage(this, damage);
+      allPlayers[this.targetId].takeDamage(this, damage);
       this.onHit();
       this.lastAttack = frameTime;
     }
   }
   this.onHit = function(){
+    //only triggered in this.attack() above
   }
 	this.sound = function(){
-		ogre_squeal.currentTime = 0;
-		ogre_squeal.play();
+
 	}
-  this.takeDamage = function(attacker, damage, debuff){
-    this.damage = Math.min(damage, this.healthCur);
+  this.takeDamage = function(attackerId, damage, debuff){
+    var damageTaken = Math.min(damage, this.healthCur);
     
     this.aggro = true;
     this.leeshTimer = new Date().getTime();
 
-    popups.push(new numberPopup(this, this.damage, 'damage', 1200));
-    
-    this.healthCur -= this.damage;
-    this.damageInfo[attacker.id] = this.damageInfo[attacker.id] || 0;
-    this.damageInfo[attacker.id] += this.damage;
-    this.damageInfo.totalDamage += this.damage;
+    this.healthCur -= damageTaken;
+    this.damageInfo[attackerId] = this.damageInfo[attackerId.id] || 0;
+    this.damageInfo[attackerId] += damageTaken;
+    this.damageInfo.totalDamage += damageTaken;
 
     if(this.healthCur <= 0)
-      this.die(attacker);
+      this.die(attackerId);
   }
-  this.die = function(killer){//do kurwy dlaczego to jest tutaj -Adam
+  this.die = function(killerId){
     for(var i=0; i<mobzz.length; i++){
       if(mobzz[i] == this){
-        for(var j = 0; j<players.length; j++){
-          var exp = 0.5 * this.exp * (this.damageInfo[players[j].id]/this.damageInfo.totalDamage) + (players[j]==killer?0.5*this.exp:0);
-          if(!exp) continue;
-          exp = Math.floor(exp);
-          players[j].experience += exp;
-          popups.push(new numberPopup(players[j], exp, 'exp', 1800));
-        }
         mobzz.splice(i,1);
         map.free(this.tx, this.ty);
+        this.dropExperience(killerId);
         this.dropLoot();
-        if(this.id == targetedMob.id)
-          targetedMob = 0;
         this.isDead = true;
       }
     }
   }
+  this.dropExperience = function(killerId){
+    for(var id in this.damageInfo){
+          var exp = 0.5 * this.exp * (this.damageInfo[id]/this.damageInfo.totalDamage) + (allPlayers[id].data.id==killerId?0.5*this.exp:0);
+          if(!exp) continue;
+          exp = Math.floor(exp);
+          allPlayers[id].data.experience += exp;
+        }
+  }
   this.dropLoot = function(){
-    entities.newEntity(this.id, this.tx, this.ty, this.loot);
+    // entities.newEntity(this.id, this.tx, this.ty, this.loot);
   }
 }
+
+
 function calcDamage(attacker, enemy){
 	var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
 	var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
@@ -576,3 +601,72 @@ function calcDamage(attacker, enemy){
 function updateStats(player){
 	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
 }
+
+// ******************  UTILS
+function dist(a, b) {
+  return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+}
+
+//************   MOBS ****************//
+function Ahmed(id, spawn_x, spawn_y){
+  Foe.call(this,'Ahmed','img/ahmed_sprite.png',id,spawn_x,spawn_y,true);
+}
+Ahmed.prototype = Object.create(Foe.prototype);
+Ahmed.prototype.constructor = Ahmed;
+
+
+function BigBat(id, spawn_x, spawn_y){
+  Foe.call(this,'Big Bat','img/bat_sprite_big.png',id,spawn_x,spawn_y,true);
+  this.healthMax = 800;
+  this.healthCur = 800;
+  this.exp = 1200;
+  this.speed -= 130;
+  this.damageMin = 85;
+  this.damageMax = 245;
+  this.defenseRating = 9;
+}
+BigBat.prototype = Object.create(Foe.prototype);
+BigBat.prototype.constructor = BigBat;
+
+
+function Bat(id, spawn_x, spawn_y){
+  Foe.call(this,'Bat','img/bat_sprite.png',id,spawn_x,spawn_y,true);
+  this.healthMax = 20;
+  this.healthCur = 20;
+  this.exp = 1000;
+  this.damageMin = 0;
+  this.damageMax = 6;
+  this.defenseRating = 2;
+}
+Bat.prototype = Object.create(Foe.prototype);
+Bat.prototype.constructor = Bat;
+
+
+function Ogre(id, spawn_x, spawn_y){
+  Foe.call(this,'Ogre','img/ogre_sprite.png',id,spawn_x,spawn_y,true);
+}
+Ogre.prototype = Object.create(Foe.prototype);
+Ogre.prototype.constructor = Ogre;
+
+
+function Goblin(id, spawn_x, spawn_y){
+  Foe.call(this,'Goblin','img/goblin_sprite.png',id,spawn_x,spawn_y,true);
+}
+Goblin.prototype = Object.create(Foe.prototype);
+Goblin.prototype.constructor = Goblin;
+
+
+function Dummy(id, spawn_x, spawn_y){
+  Foe.call(this,'Dummy','img/training_dummy.png',id,spawn_x,spawn_y,false);
+  this.draw = function(ctx){
+    ctx.drawImage(this.img, (this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
+  }
+}
+Dummy.prototype = Object.create(Foe.prototype);
+Dummy.prototype.constructor = Dummy;
+
+function Shroom(id, spawn_x, spawn_y){
+  Foe.call(this,'Shroom','img/shroom_sprite.png',id,spawn_x,spawn_y,false, 25, 24, 10);
+}
+Shroom.prototype = Object.create(Foe.prototype);
+Shroom.prototype.constructor = Shroom;

@@ -1,7 +1,8 @@
 var player_id = prompt('id: ');
-var socket = io.connect('http://10.10.10.102:6767');
+var socket = io.connect('http://localhost:6767');
 socket.on('players-data-update', function(data){
-  onlinePlayersData = data;
+  server_onlinePlayersData = data.playersData;
+  server_mobzz = data.mobs;
   //aready getting data about existing player1s. reqrite shit to make it work
 });
 socket.on('player-login-success', function (data){
@@ -16,16 +17,12 @@ socket.on('reconnect', function(){
 });
 socket.on('send-map-world', function (data){
   map.world = data;
-  // for (var x=0; x < map.w; x++) {
-  //   for (var y=0; y < map.h; y++){
-  //     map.world[x][y] = data[x][y];
-  //   }
-  // }
 });
   socket.emit('player-login-attempt', player_id);
   
 
-var onlinePlayersData = {};
+var server_onlinePlayersData = {};
+var server_mobzz = [];
 var gh = 32;
 var game_size = {w: 32, h: 16};
 var map = new Map(null, 75, 75);
@@ -35,9 +32,8 @@ canvas.width = game_size.w*gh;
 canvas.height = game_size.h*gh;
 // canvas.style.cursor = "none";
 var ctx = canvas.getContext('2d');
-// ctx.imageSmoothingEnabled = false;
-// ctx.mozImageSmoothingEnabled = false;
-// ctx.webkitImageSmoothingEnabled = false;
+ctx.imageSmoothingEnabled = false;
+ctx.mozImageSmoothingEnabled = false;
 var lastKeyEvent;
 var frameTime = new Date().getTime();
 var lastFrame = new Date().getTime();
@@ -50,12 +46,13 @@ var mousepos = {x:0, y:0};
 var player1 = new Player('img/knight.png', player_id, 2, 4);
 // players.push(new Player("img/training_dummy.png", 2));//just for testing. doesnt get drawn
 
-var mobzz = [];
+// var mobzz = [];
 // var spawner = new MonsterSpawner();
+// spawner.populateMobs();
+
 var entities = new EntityManager();
 var popups = [];
 
-// populateMobs();
 
 var actionBar = new ActionBar();
 var experienceBar = new ExperienceBar();
@@ -96,6 +93,7 @@ function handleClick(e) {
     }
   }
 }
+
 var m = [0, 0];
 var tm = m;
 
@@ -104,14 +102,6 @@ var rad = 12;
 //2 lines for the balls
 function draw(ctx){
   ctx.clearRect(0, 0, game_size.w*gh, game_size.h*gh);
-  //EARTHQUAKE
-  // if(tm[0] == m[0] && tm[1] == m[1]){
-  //   tm[0] = Math.round(5+Math.random()*10);
-  //   tm[1] = Math.round(5+Math.random()*10);
-  // }
-  // m[0] += tm[0]>m[0]?0.5:-0.5;
-  // m[1] += tm[1]>m[1]?0.5:-0.5;
-  // ctx.translate(m[0], m[1]);
 
   map.drawBackground(ctx);
   map.drawForeground(ctx);
@@ -120,15 +110,30 @@ function draw(ctx){
   ctx.translate(map.x, map.y);
 
     for(var i = 0; i< entities.allEntities.length; i++) entities.allEntities[i].draw();
-    for(var i = mobzz.length; i--;) {mobzz[i].draw(ctx);}
+    // for(var i = mobzz.length; i--;) {mobzz[i].draw(ctx);}
+    // for(var i = server_mobzz.length; i--;) {server_mobzz[i].draw(ctx);} //doesnt work
+
 
     player1.draw(ctx);
+
+
+//************ DRAW MOBS FROM SERVER *** deving
+  ctx.fillStyle = 'green';
+  for(var i in server_mobzz){
+    var animationFrame = Math.floor(frameTime / server_mobzz[i].animationSpeed)%server_mobzz[i].spriteN;
+    ctx.fillRect((server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
+    // ctx.drawImage(tempImg, animationFrame*server_mobzz[i].spriteX, 0, server_mobzz[i].spriteX, server_mobzz[i].spriteY, (server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
+    if(targetedMob == server_mobzz[i]){
+      ctx.strokeStyle = "rgba(255, 0, 0, 1)";
+      ctx.strokeRect((server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
+    }
+  }
 //********************************************************//
 //********** DRAW OTHER PLAYERS FROM SERVER *************//
-    for(var sId in onlinePlayersData){
-      if(onlinePlayersData[sId].id == player1.data.id)
-        continue;
-      var that = onlinePlayersData[sId];
+    for(var sId in server_onlinePlayersData){
+      // if(server_onlinePlayersData[sId].id == player1.data.id)
+      //   continue;
+      var that = server_onlinePlayersData[sId];
 
       if(that.x < that.tx)
         that.direction = 3;
@@ -139,7 +144,7 @@ function draw(ctx){
       else if(that.y > that.ty)
         that.direction = 1;
 
-      ctx.drawImage(player1.img_knight, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
+      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
     }
 //********** DRAW OTHER PLAYERS FROM SERVER ***************//
 //********************************************************//
@@ -149,8 +154,6 @@ function draw(ctx){
   ctx.translate(-map.x, -map.y);
   map.drawFront(ctx);
 
-  //EARTHQUAKE
-  // ctx.translate(-m[0], -m[1]);
   actionBar.draw(ctx);
   experienceBar.draw(ctx);
 }
@@ -174,8 +177,8 @@ function update(){
   map.update(player1.data);
 
   experienceBar.update();
-  for(var i=0; i < mobzz.length; i++) {mobzz[i].update(); }
-  for(var i=0; i < 1; i++) {player1.update(); }
+  // for(var i=0; i < mobzz.length; i++) {mobzz[i].update(); }
+  player1.update();
   // spawner.update();
   missiles.update();
   
