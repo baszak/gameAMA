@@ -130,3 +130,77 @@ function levelUpFormula(level){//xp needed for the next lvl
 function levelExpFormula(level){//
   return ((50/3)*(level*level*level-6*level*level+17*level-12));
 }
+function drawPlayers(ctx){
+	if(!player1.ready) return;
+	for(var sId in server_dataBuffer[0]){
+	      // if(server_onlinePlayersData[sId].id == player1.data.id)//skip drawing player locally
+	      //   continue;
+	      var that = server_dataBuffer[0][sId];//current iteration player.data
+
+
+	      if(that.x < that.tx)
+	        that.direction = 3;
+	      else if(that.x > that.tx)
+	        that.direction = 2;
+	      else if(that.y < that.ty)
+	        that.direction = 0;
+	      else if(that.y > that.ty)
+	        that.direction = 1;
+
+	      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
+  }
+}
+function OtherPlayer(name, level, pos_x, pos_y, img_url, limboState){
+	this.img = new Image();
+	this.img.src = img_url || 'img/knight_green.png';
+	this.data = {
+		name: name,
+		level: level,
+		x: pos_x,
+		y: pos_y,
+		tx: pos_x,
+		ty: pos_y,
+		ax: 0,
+		ay: 0,
+		direction: 0,
+		animStart: frameTime,
+		moving: false,
+		speedCur: 400,
+		limboState: limboState || false
+	}
+	this.update = function(){
+		if((this.data.tx != this.data.x || this.data.ty != this.data.y) && !this.data.moving){
+			this.data.moving = true;
+			this.data.animStart = frameTime;
+		}
+		this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
+    this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
+    
+    if (Math.abs(this.data.ax) >= 1) {
+      this.data.moving = false;
+      this.data.x = this.data.tx;
+      this.data.ax = 0;
+    }
+    if (Math.abs(this.data.ay) >= 1) {
+      this.data.moving = false;
+      this.data.y = this.data.ty;
+      this.data.ay = 0
+    }
+	}
+	this.draw = function(ctx){
+		if(this.data.x < this.data.tx)
+        this.data.direction = 3;
+      else if(this.data.x > this.data.tx)
+        this.data.direction = 2;
+      else if(this.data.y < this.data.ty)
+        this.data.direction = 0;
+      else if(this.data.y > this.data.ty)
+        this.data.direction = 1;
+    
+    if(this.data.limboState){
+      // ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+    }
+    else
+      ctx.drawImage(this.img, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+	}
+}

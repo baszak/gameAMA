@@ -40,13 +40,19 @@ io.on('connection', function (socket) {
 			//pull existing player from database, so he can be updated
 			onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
 			//just send id for now. later send entire player data
-			socket.emit('player-login-success', new_player_id);
+			io.to(socket.id).emit('player-login-success', {id: new_player_id, x: allPlayers[new_player_id].data.x, y: allPlayers[new_player_id].data.y});
 		}
 		else{
 			allPlayers[new_player_id] = new Player(new_player_id, 2, 4);
 			onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
-			socket.emit('player-login-failure', new_player_id);
+			io.to(socket.id).emit('player-login-failure', {id: new_player_id, x: allPlayers[new_player_id].data.x, y: allPlayers[new_player_id].data.y});
 		}
+    //connecting player gets onlinePlayersData initially
+
+    for(var sId in clients)
+      io.to(sId).emit('player-connected', {id: socket.id, playerData: onlinePlayersData[socket.id]});
+    io.to(socket.id).emit('player-initiate-other-players', onlinePlayersData);
+
 	});
   socket.on('players-data-update', function (data) {//not used
   	onlinePlayersData[socket.id] = data;
@@ -55,7 +61,9 @@ io.on('connection', function (socket) {
   socket.on('player-input-move', function (data){
   	if(onlinePlayersData.hasOwnProperty(socket.id)){
 	  	var id = onlinePlayersData[socket.id].id;
-	  	allPlayers[id].move(data.dx, data.dy);
+      // allPlayers[id].data.moveQ.__proto__ = MovementQueue.prototype;
+      // allPlayers[id].data.moveQ = data;
+      allPlayers[id].move(data.x, data.y);
 	  }
   });
   socket.on('request-map-world', function(){
@@ -67,11 +75,13 @@ io.on('connection', function (socket) {
 	    var id = onlinePlayersData[socket.id].id;
 	    //pull disconnecting player back into database.
 	    console.log('disconnecting' + id);
-      map.free(allPlayers[id].data.x, allPlayers[id].data.y);
+      map.free(allPlayers[id].data.tx, allPlayers[id].data.ty);
 	    allPlayers[id].data = onlinePlayersData[socket.id];
 	    //no longer update player that disconnected.
 	    delete onlinePlayersData[socket.id];
-	  }
+    }
+    for(var sId in clients)//tell all cleints that this socket.id is no more
+      io.to(sId).emit('player-disconnected', socket.id);
   });
 });
 
@@ -95,7 +105,7 @@ var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/up
 
 
 	lastFrame = frameTime;
-}, 1000/66);
+}, 1000/60);
 
 var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/update
 //all client server comunication goes here
@@ -104,10 +114,10 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
 //emit mobs
 //emit other player positions - done
 
-	// console.log('mobzz.length  ' + mobzz.length);
-	// console.log("spawner.spawns.length  " + spawner.spawns.length);
 	for(var sId in clients)
-		io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz});
+		io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
+  // for(var sId in clients)
+  //   io.to(sId).emit('mobs-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
 
 }, 1000/22);
 
@@ -260,7 +270,7 @@ function Player(id, spawn_x, spawn_y){
                         secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
-                        boots: {speedMod: 0.6},
+                        boots: {speedMod: 1},
                         head: {},
                         backpack: []
                       }
@@ -294,6 +304,7 @@ function Player(id, spawn_x, spawn_y){
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
+          console.log('player' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
         }
       }
     }

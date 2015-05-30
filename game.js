@@ -1,27 +1,59 @@
 var player_id = prompt('id: ');
+var player_x = 2;
+var player_y = 4;
 var socket = io.connect('http://localhost:6767');
-socket.on('players-data-update', function(data){
-  server_onlinePlayersData = data.playersData;
-  server_mobzz = data.mobs;
-  //aready getting data about existing player1s. reqrite shit to make it work
+  socket.on('players-data-update', function(data){
+    if(serverDataInitialized){
+      for(var i in data.playersData){
+        if(!otherPlayers[i])
+          continue;
+        otherPlayers[i].data.tx = data.playersData[i].tx;
+        otherPlayers[i].data.ty = data.playersData[i].ty;
+      }
+    }
+    // server_onlinePlayersData = data.playersData;
+    // if(server_dataBuffer.length>5)
+    //   server_dataBuffer.pop();
+    // server_onlinePlayersData.timeStamp = data.timeStamp;
+    // server_dataBuffer.unshift(server_onlinePlayersData);
+    server_mobzz = data.mobs;
+    //aready getting data about existing player1s. reqrite shit to make it work
+  });
+socket.on('player-disconnected', function (data){
+  delete otherPlayers[data];
+});
+socket.on('player-connected', function (data){
+  console.warn('player ' + data.playerData.id + ' connected.');
+  otherPlayers[data.id] = new OtherPlayer(data.playerData.name, data.playerData.level, data.playerData.x, data.playerData.y);
+  otherPlayers[data.id].data = data.playerData;
 });
 socket.on('player-login-success', function (data){
-  alert('login succesful ' + data);
+  statusMessage.showMessage('login succesful ' + data.id, 3000);
+  player_x = data.x;
+  player_y = data.y;
 });
 socket.on('player-login-failure', function (data){
-  alert('no player' + data + ' has been found...creating');
+  statusMessage.showMessage('no player ' + data.id + ' has been found...creating', 3000);
+  player_x = 2;
+  player_y = 4;
 });
 socket.on('reconnect', function(){
   socket.emit('player-login-attempt', player_id);
-  alert('welcome back');
+  statusMessage.showMessage('wolcome back', 3000);
 });
 socket.on('send-map-world', function (data){
   map.world = data;
 });
-  socket.emit('player-login-attempt', player_id);
-  
+socket.emit('player-login-attempt', player_id);
+socket.on('player-initiate-other-players', function(data){
+  for(var sId in data)
+    otherPlayers[sId] = new OtherPlayer(data[sId].name, data[sId].level, data[sId].x, data[sId].y);
+  serverDataInitialized = true;
+});
 
+var serverDataInitialized = false;
 var server_onlinePlayersData = {};
+var server_dataBuffer = [];
 var server_mobzz = [];
 var gh = 32;
 var game_size = {w: 32, h: 16};
@@ -43,7 +75,8 @@ var mousepos = {x:0, y:0};
 // console.log("XML document loaded: " + xhttp.statusText);
 
 // var players = [];
-var player1 = new Player('img/knight.png', player_id, 2, 4);
+var player1 = new Player('img/knight.png', player_id, player_x, player_y);
+var otherPlayers = {};
 // players.push(new Player("img/training_dummy.png", 2));//just for testing. doesnt get drawn
 
 // var mobzz = [];
@@ -93,13 +126,6 @@ function handleClick(e) {
     }
   }
 }
-
-var m = [0, 0];
-var tm = m;
-
-var y_det=0, x_det=0;
-var rad = 12;
-//2 lines for the balls
 function draw(ctx){
   ctx.clearRect(0, 0, game_size.w*gh, game_size.h*gh);
 
@@ -109,12 +135,15 @@ function draw(ctx){
   ctx.fillRect(Math.floor(mousepos.x/gh)*gh,Math.floor(mousepos.y/gh)*gh,gh,gh);
   ctx.translate(map.x, map.y);
 
-    for(var i = 0; i< entities.allEntities.length; i++) entities.allEntities[i].draw();
-    // for(var i = mobzz.length; i--;) {mobzz[i].draw(ctx);}
-    // for(var i = server_mobzz.length; i--;) {server_mobzz[i].draw(ctx);} //doesnt work
+  for(var i = 0; i< entities.allEntities.length; i++) entities.allEntities[i].draw();
 
 
-    player1.draw(ctx);
+  player1.draw(ctx);
+  for(var i in otherPlayers) otherPlayers[i].draw(ctx);
+
+
+  // drawPlayers(ctx);
+
 
 
 //************ DRAW MOBS FROM SERVER *** deving
@@ -130,26 +159,9 @@ function draw(ctx){
   }
 //********************************************************//
 //********** DRAW OTHER PLAYERS FROM SERVER *************//
-    for(var sId in server_onlinePlayersData){
-      // if(server_onlinePlayersData[sId].id == player1.data.id)
-      //   continue;
-      var that = server_onlinePlayersData[sId];
 
-      if(that.x < that.tx)
-        that.direction = 3;
-      else if(that.x > that.tx)
-        that.direction = 2;
-      else if(that.y < that.ty)
-        that.direction = 0;
-      else if(that.y > that.ty)
-        that.direction = 1;
-
-      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
-    }
-//********** DRAW OTHER PLAYERS FROM SERVER ***************//
-//********************************************************//
-    missiles.draw(ctx);
-    for(var i = 0; i<popups.length; i++) {popups[i].draw(ctx);}
+  missiles.draw(ctx);
+  for(var i = 0; i<popups.length; i++) popups[i].draw(ctx);
 
   ctx.translate(-map.x, -map.y);
   map.drawFront(ctx);
@@ -179,6 +191,8 @@ function update(){
   experienceBar.update();
   // for(var i=0; i < mobzz.length; i++) {mobzz[i].update(); }
   player1.update();
+  for(var i in otherPlayers) otherPlayers[i].update();
+
   // spawner.update();
   missiles.update();
   

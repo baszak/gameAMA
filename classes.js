@@ -111,7 +111,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
                         secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
-                        boots: {speedMod: 0.6},
+                        boots: {speedMod: 1},
                         head: {},
                         backpack: []
                       }
@@ -142,9 +142,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
           this.data.animStart = frameTime;
           this.data.moving = true;
           map.free(this.data.x, this.data.y);
-          this.data.tx = nextMove[0]
-          this.data.ty = nextMove[1]
+          this.data.tx = nextMove[0];
+          this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
+          console.log(this.data.tx, this.data.ty);
         }
       }
     }
@@ -159,9 +160,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     // socket.emit('players-data-update', this.data);
   }
   this.move = function(dx, dy, dir){
-    socket.emit('player-input-move', {dx: dx, dy: dy});
+    // socket.emit('player-input-move', {dx: dx, dy: dy});
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
+    socket.emit('player-input-move', {x: dx, y: dy});
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
