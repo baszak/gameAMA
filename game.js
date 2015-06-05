@@ -1,41 +1,31 @@
 var player_id = prompt('id: ');
-var player_x = 2;
-var player_y = 4;
+
 var socket = io.connect('http://localhost:6767');
   socket.on('players-data-update', function(data){
     if(serverDataInitialized){
       for(var i in data.playersData){
-        if(!otherPlayers[i])
-          continue;
-        otherPlayers[i].data.tx = data.playersData[i].tx;
-        otherPlayers[i].data.ty = data.playersData[i].ty;
+        if(!otherPlayers[i]) continue;
+          otherPlayers[i].data.moveBuffer.push({tx: data.playersData[i].tx, ty: data.playersData[i].ty})
       }
     }
-    // server_onlinePlayersData = data.playersData;
-    // if(server_dataBuffer.length>5)
-    //   server_dataBuffer.pop();
-    // server_onlinePlayersData.timeStamp = data.timeStamp;
-    // server_dataBuffer.unshift(server_onlinePlayersData);
     server_mobzz = data.mobs;
-    //aready getting data about existing player1s. reqrite shit to make it work
   });
 socket.on('player-disconnected', function (data){
   delete otherPlayers[data];
 });
+socket.on('ping back', function(data){
+  console.log(frameTime - data);
+});
 socket.on('player-connected', function (data){
-  console.warn('player ' + data.playerData.id + ' connected.');
-  otherPlayers[data.id] = new OtherPlayer(data.playerData.name, data.playerData.level, data.playerData.x, data.playerData.y);
+  console.log('player ' + data.playerData.id + ' connected.');
+  otherPlayers[data.id] = new OtherPlayer(data.playerData.name, data.playerData.level, data.playerData.x, data.playerData.y, data.playerData.healthMax, data.playerData.healthCur, data.playerData.speedCur);
   otherPlayers[data.id].data = data.playerData;
 });
 socket.on('player-login-success', function (data){
   statusMessage.showMessage('login succesful ' + data.id, 3000);
-  player_x = data.x;
-  player_y = data.y;
 });
 socket.on('player-login-failure', function (data){
   statusMessage.showMessage('no player ' + data.id + ' has been found...creating', 3000);
-  player_x = 2;
-  player_y = 4;
 });
 socket.on('reconnect', function(){
   socket.emit('player-login-attempt', player_id);
@@ -47,12 +37,10 @@ socket.on('send-map-world', function (data){
 socket.emit('player-login-attempt', player_id);
 socket.on('player-initiate-other-players', function(data){
   for(var sId in data)
-    otherPlayers[sId] = new OtherPlayer(data[sId].name, data[sId].level, data[sId].x, data[sId].y);
+    otherPlayers[sId] = new OtherPlayer(data[sId].id, data[sId].name, data[sId].level, data[sId].x, data[sId].y, data[sId].healthMax , data[sId].healthCur , data[sId].speedCur);
   serverDataInitialized = true;
 });
 
-var serverDataInitialized = false;
-var server_onlinePlayersData = {};
 var server_dataBuffer = [];
 var server_mobzz = [];
 var gh = 32;
@@ -75,8 +63,9 @@ var mousepos = {x:0, y:0};
 // console.log("XML document loaded: " + xhttp.statusText);
 
 // var players = [];
-var player1 = new Player('img/knight.png', player_id, player_x, player_y);
+var player1 = new Player('img/knight.png', player_id, 2, 4);
 var otherPlayers = {};
+var showBackpack = false;
 // players.push(new Player("img/training_dummy.png", 2));//just for testing. doesnt get drawn
 
 // var mobzz = [];
@@ -143,8 +132,20 @@ function draw(ctx){
 
 
   // drawPlayers(ctx);
-
-
+  if(showBackpack){
+    ctx.font = "12px Impact";
+    for(var i=0, j=0, k=0; i<player1.data.equipment.backpack.contents.length; i++, j++){
+      if(j==5){
+        j=0;
+        k++;
+      }
+      ctx.fillStyle = '#3c3c3c';
+      ctx.fillRect(400 + j*gh - map.x, gh*k+150-map.y, gh-3, gh-3);
+      ctx.fillStyle = '#e1e2df';
+      if(player1.data.equipment.backpack.contents[i])
+        ctx.fillText(player1.data.equipment.backpack.contents[i].name, 400+j*gh - map.x, gh*k+166 -map.y);
+    }
+  }
 
 //************ DRAW MOBS FROM SERVER *** deving
   ctx.fillStyle = 'green';
@@ -171,8 +172,8 @@ function draw(ctx){
 }
 
 var drugX = 0, drugY = 1, fadeStage = 0, fadeTime = 2000;
-
 function update(){
+  // console.log(frameTime - ping);
   frameTime = new Date().getTime();
   
   if(player1.data.isDrugged){
@@ -211,6 +212,10 @@ function checkInput(){
   if (key == "87") player1.move(0, -1, 'up');
   if (key == "68") player1.move(1, 0, 'right');
   if (key == "83") player1.move(0, 1, 'down');
+  if (key == "73") showBackpack = !showBackpack;
+  if (key == "117"/* F6 */) {
+    socket.emit('ping', frameTime);
+  }
   if (key == "32") autoTarget();
   if (key == "49" || key == "97") player1.attack();
   player1["slot_"+ (key > 97 ? key - 97 : key -  49)] && player1["slot_"+ (key > 97 ? key - 97 : key -  49)]();
@@ -221,23 +226,6 @@ function checkInput(){
 $(document).ready(function(){
 
   requestAnimationFrame(update);
-  
-  // $.getJSON('map_16tiles_resized.json',{},
-  //     function(data){
-  //       var x, y, h, w;
-  //       for(var o in data.objects){
-  //         h = Math.round(data.objects[o].height/gh);
-  //         w = Math.round(data.objects[o].width/gh);
-  //         x = Math.round(data.objects[o].x/gh);
-  //         y = Math.round(data.objects[o].y/gh);
-  //         for(var i = x; i < (x+w); i++){
-  //           for(var j = y; j < (y+h); j++){
-  //             map.world[i][j] = 1;
-  //           }
-  //         }
-  //       }
-  //     }
-  //   );
   $(document).keydown(function(e){ lastKeyEvent = e; });
   $('img').mousemove(function(e){ mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)}; });
   // $('img').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });

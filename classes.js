@@ -113,7 +113,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
                         legs: {},
                         boots: {speedMod: 1},
                         head: {},
-                        backpack: []
+                        backpack: new Container
                       }
   }
 	this.update = function(){
@@ -145,7 +145,6 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
-          console.log(this.data.tx, this.data.ty);
         }
       }
     }
@@ -163,7 +162,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     // socket.emit('player-input-move', {dx: dx, dy: dy});
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
-    socket.emit('player-input-move', {x: dx, y: dy});
+    socket.emit('player-input-move', {x: dx, y: dy, time: frameTime});
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
@@ -372,7 +371,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
         }
       }
       else{
-        var cy = (Math.random() < (this.y - spawn_y + 4)/8)?1:-1;
+        var cy = (Math.random() < (this.y - spawn_y + 4)/8)?1:-1; //prefer movement towards spawn point. obsolete?
         if(map.isValid(this.x, this.y-cy)){
           if(!this.moving){
             this.rlyMove(this.tx,this.y - cy);
@@ -777,3 +776,36 @@ function EntityManager(){
 }
 
 //create function returning damage, taking attacker and attacked as arguments
+function Container(max_size, parent_container){
+  this.name = 'container';
+  this.size = max_size || 16;
+  this.contents = [];
+
+  this.getFirstEmptyIndex = function(){
+    for(var i = 0; i < this.size; i++){
+      if(!this.contents[i]){
+        return i;
+      }
+    }
+    return (-1);
+  }
+  this.addItem = function(item, position){
+    var index = this.getFirstEmptyIndex();
+    if(index == -1) return;
+    if(position >= this.size) return;
+    if(this.contents[position]){
+      if(this.contents[position].name == item.name && item.stackable){
+        this.stackItem(this.contents[position], item);
+        return;
+      }
+      this.contents[index] = item;
+    }
+    else{
+      this.contents[position] = item;
+    }
+  }
+  this.stackItem = function(item1, item2){
+    item1.quantity += item2.quantity;
+    console.log('stacking')
+  }
+}

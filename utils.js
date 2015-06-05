@@ -130,7 +130,7 @@ function levelUpFormula(level){//xp needed for the next lvl
 function levelExpFormula(level){//
   return ((50/3)*(level*level*level-6*level*level+17*level-12));
 }
-function drawPlayers(ctx){
+/*function drawPlayers(ctx){
 	if(!player1.ready) return;
 	for(var sId in server_dataBuffer[0]){
 	      // if(server_onlinePlayersData[sId].id == player1.data.id)//skip drawing player locally
@@ -149,11 +149,12 @@ function drawPlayers(ctx){
 
 	      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
   }
-}
-function OtherPlayer(name, level, pos_x, pos_y, img_url, limboState){
+}*/
+function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_url, limboState){
 	this.img = new Image();
 	this.img.src = img_url || 'img/knight_green.png';
 	this.data = {
+		id: id,
 		name: name,
 		level: level,
 		x: pos_x,
@@ -162,20 +163,34 @@ function OtherPlayer(name, level, pos_x, pos_y, img_url, limboState){
 		ty: pos_y,
 		ax: 0,
 		ay: 0,
+		last_ax: 0,
+		last_ay: 0,
 		direction: 0,
 		animStart: frameTime,
 		moving: false,
-		speedCur: 400,
-		limboState: limboState || false
+		speedCur: speedCur,
+		limboState: limboState || false,
+		healthMax: healthMax,
+		healthCur: healthCur,
+		moveBuffer: []
 	}
 	this.update = function(){
-		if((this.data.tx != this.data.x || this.data.ty != this.data.y) && !this.data.moving){
-			this.data.moving = true;
-			this.data.animStart = frameTime;
+		if(!this.data.moving){
+			for(var i=0; i<this.data.moveBuffer.length; i++){
+				if(this.data.tx == this.data.moveBuffer[0].tx && this.data.ty == this.data.moveBuffer[0].ty)
+					this.data.moveBuffer.shift();
+				else{
+					this.data.tx = this.data.moveBuffer[0].tx;
+					this.data.ty = this.data.moveBuffer[0].ty;
+					this.data.animStart = frameTime;
+					this.data.moving = true;
+				}
+			}
 		}
+
 		this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
     this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
-    
+
     if (Math.abs(this.data.ax) >= 1) {
       this.data.moving = false;
       this.data.x = this.data.tx;

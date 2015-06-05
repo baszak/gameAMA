@@ -19,92 +19,91 @@ map.loadCollisions();
 var mobzz = [];
 var spawner = new MonsterSpawner();
 spawner.populateMobs();
-var clients = {};
 var allPlayers = {};
 var onlinePlayersData = {};
 
 io.on('connection', function (socket) {
-	clients[socket.id] = socket;
 
 
-	socket.on('player-login-attempt', function (new_player_id){
-		console.log('connecting ' + new_player_id + ' ...');
-		var playerFound = false;
-		for(i in allPlayers){
-				if(allPlayers[i].data.id == new_player_id){
-					playerFound = true;
-					break;
-				}
-		}
-		if(playerFound){
-			//pull existing player from database, so he can be updated
-			onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
-			//just send id for now. later send entire player data
-			io.to(socket.id).emit('player-login-success', {id: new_player_id, x: allPlayers[new_player_id].data.x, y: allPlayers[new_player_id].data.y});
-		}
-		else{
-			allPlayers[new_player_id] = new Player(new_player_id, 2, 4);
-			onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
-			io.to(socket.id).emit('player-login-failure', {id: new_player_id, x: allPlayers[new_player_id].data.x, y: allPlayers[new_player_id].data.y});
-		}
-    //connecting player gets onlinePlayersData initially
+  socket.on('player-login-attempt', function (new_player_id){
+    console.log('connecting ' + new_player_id + ' ...');
+    var playerFound = false;
+    for(i in allPlayers){
+        if(allPlayers[i].data.id == new_player_id){
+          playerFound = true;
+          break;
+        }
+    }
+    if(playerFound){
+      //pull existing player from database, so he can be updated
+      //just send id for now. later send entire player data
+      io.to(socket.id).emit('player-login-success', {id: new_player_id, playerData: allPlayers[new_player_id]});
+    }
+    else{
+      allPlayers[new_player_id] = new Player(new_player_id, 2, 4);
+      io.to(socket.id).emit('player-login-failure', {id: new_player_id, playerData: allPlayers[new_player_id]});
+    }
+      onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
 
-    for(var sId in clients)
+    //notify all players that a player connected
+    for(var sId in onlinePlayersData)
       io.to(sId).emit('player-connected', {id: socket.id, playerData: onlinePlayersData[socket.id]});
+    //connecting player gets onlinePlayersData initially
     io.to(socket.id).emit('player-initiate-other-players', onlinePlayersData);
 
-	});
-  socket.on('players-data-update', function (data) {//not used
-  	onlinePlayersData[socket.id] = data;
-
   });
+  /*socket.on('players-data-update', function (data) {//not used
+    onlinePlayersData[socket.id] = data;
+
+  });*/
+  socket.on('ping', function(data){
+    io.to(socket.id).emit('ping back', data);
+    console.log(onlinePlayersData[socket.id].x, onlinePlayersData[socket.id].y);
+    console.log(socket.conn.address);
+  })
   socket.on('player-input-move', function (data){
-  	if(onlinePlayersData.hasOwnProperty(socket.id)){
-	  	var id = onlinePlayersData[socket.id].id;
-      // allPlayers[id].data.moveQ.__proto__ = MovementQueue.prototype;
-      // allPlayers[id].data.moveQ = data;
+    if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
+      var id = onlinePlayersData[socket.id].id;
       allPlayers[id].move(data.x, data.y);
-	  }
+    }
   });
   socket.on('request-map-world', function(){
-  	socket.emit('send-map-world', map.world);
+    socket.emit('send-map-world', map.world);
   });
-  socket.on('disconnect', function () { //crashes when a game was running when server started and disconncted
+  socket.on('disconnect', function () {
     if(onlinePlayersData.hasOwnProperty(socket.id)){
-	    delete clients[socket.id];
-	    var id = onlinePlayersData[socket.id].id;
-	    //pull disconnecting player back into database.
-	    console.log('disconnecting' + id);
+      var id = onlinePlayersData[socket.id].id;
+      //pull disconnecting player back into database.
+      console.log('disconnecting' + id);
       map.free(allPlayers[id].data.tx, allPlayers[id].data.ty);
-	    allPlayers[id].data = onlinePlayersData[socket.id];
-	    //no longer update player that disconnected.
-	    delete onlinePlayersData[socket.id];
+      //no longer update player that disconnected.
+      delete onlinePlayersData[socket.id];
     }
-    for(var sId in clients)//tell all cleints that this socket.id is no more
+    for(var sId in onlinePlayersData)//tell all cleints that this socket.id is no more
       io.to(sId).emit('player-disconnected', socket.id);
   });
 });
 
 
 var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/update
-	frameTime = new Date().getTime();
+  frameTime = new Date().getTime();
 //server side game physics are all calculated here
 //client veirfication goes here
 //take client input and process
 
 
-	for(var i in onlinePlayersData){
-		if(!allPlayers[onlinePlayersData[i].id])
-			continue;
-		allPlayers[onlinePlayersData[i].id].update();
-	}
+  for(var sId in onlinePlayersData){
+    if(!allPlayers[onlinePlayersData[sId].id])
+      continue;
+    allPlayers[onlinePlayersData[sId].id].update();
+  }
 
-	spawner.update();
+  spawner.update();
   for(var i=0; i < mobzz.length; i++) mobzz[i].update();
 
 
 
-	lastFrame = frameTime;
+  lastFrame = frameTime;
 }, 1000/60);
 
 var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/update
@@ -112,12 +111,10 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
 //send game-state to all clients
 //emit appropriate map.worldPart
 //emit mobs
-//emit other player positions - done
+//emit other player positions
 
-	for(var sId in clients)
-		io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
-  // for(var sId in clients)
-  //   io.to(sId).emit('mobs-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
+  for(var sId in onlinePlayersData)
+    io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
 
 }, 1000/22);
 
@@ -145,10 +142,10 @@ function Map(h, w){
     });
     console.log("map collisions loaded");
   }
-	this.isValid = function(x, y) {
-		return (this.world[x][y] == 0);
-	}
-	this.occupy = function(x, y){
+  this.isValid = function(x, y) {
+    return (this.world[x][y] == 0);
+  }
+  this.occupy = function(x, y){
     this.world[x][y] = 1;
   }
   this.free = function(x, y){
@@ -170,7 +167,7 @@ function Map(h, w){
 function MonsterSpawner(){//server only
   var k = 0;
   this.spawns = [];
-	this.populateMobs = function(){
+  this.populateMobs = function(){
   // for(var i = 0; i< 10000; i++)
   this.createSpawn(Bat, 7, 9, 5);
   this.createSpawn(Bat, 19, 18, 45);
@@ -222,8 +219,8 @@ function Player(id, spawn_x, spawn_y){
     id: id || 1,
     name : "Playerino",
     //player resources
-  	x: spawn_x,
-  	y: spawn_y,
+    x: spawn_x,
+    y: spawn_y,
     tx: spawn_x,
     ty: spawn_y,
     direction: 0,
@@ -275,7 +272,7 @@ function Player(id, spawn_x, spawn_y){
                         backpack: []
                       }
   }
-	this.update = function(){
+  this.update = function(){
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
     this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
     
@@ -304,7 +301,7 @@ function Player(id, spawn_x, spawn_y){
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
-          console.log('player' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
+          console.log('player ' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
         }
       }
     }
@@ -411,7 +408,7 @@ function Player(id, spawn_x, spawn_y){
 }
 function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN){//need to make separate check for player and other mobs positions regarding collisions
   this.imgUrl = url;
-	this.name = name;
+  this.name = name;
   this.id = id;
   this.x = spawn_x || 10;
   this.y = spawn_y || 10;
@@ -447,7 +444,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   
   map.occupy(this.x, this.y);
 
-	this.update = function(){
+  this.update = function(){
     // var kara = Math.sqrt((this.tx - this.x)*(this.tx - this.x) + (this.ty - this.y)*(this.ty - this.y));
     // kara = kara || 1;
     var kara = 1;
@@ -469,9 +466,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     this.move();
     this.attack();
     return this;
-	}
+  }
   
-	this.rlyMove = function(tx,ty){
+  this.rlyMove = function(tx,ty){
     this.animStart = frameTime;
     this.moving = true;
     map.free(this.x, this.y);
@@ -558,9 +555,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.onHit = function(){
     //only triggered in this.attack() above
   }
-	this.sound = function(){
+  this.sound = function(){
 
-	}
+  }
   this.takeDamage = function(attackerId, damage, debuff){
     var damageTaken = Math.min(damage, this.healthCur);
     
@@ -601,16 +598,16 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 
 
 function calcDamage(attacker, enemy){
-	var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
-	var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
-	baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
-	baseDamage -= enemy.defenseRating;//basically damage absorbtion
-	var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
-	damage += damage*attacker.equipment.primary.damageMod;
-	return (damage>=0)?Math.round(damage):0;//keep it in integers
+  var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
+  var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
+  baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
+  baseDamage -= enemy.defenseRating;//basically damage absorbtion
+  var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
+  damage += damage*attacker.equipment.primary.damageMod;
+  return (damage>=0)?Math.round(damage):0;//keep it in integers
 }
 function updateStats(player){
-	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
+  player.speedCur = player.speedCur>=80?Math.round(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
 }
 
 // ******************  UTILS
