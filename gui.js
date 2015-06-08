@@ -1,15 +1,19 @@
 (function($) {
-  _globalWindowDragged = null;
-  _globalResizedWindow = null;
-  _globalDragAnchor = null;
-  _globalResizeDir = null;
-  _globalDraggedItem = null;
-  _globalZIndex = 999;
-  _globalFakeItem = $(document.createElement("div"));
+  var _globalWindowDragged = null;
+  var _globalResizedWindow = null;
+  var _globalDragAnchor = null;
+  var _globalResizeDir = null;
+  var _globalDraggedItem = null;
+  var _globalZIndex = 999;
+  var _globalFakeItem = $(document.createElement("div"));
   _globalFakeItem.addClass("globalFakeItem");
-  _globalItemAnchor = null;
+  var _globalItemAnchor = null;
+  var _globalTooltip = $(document.createElement("div"));
+  _globalTooltip.addClass("globalTooltip");
+  _globalTooltip.appendTo(document.body);
+  var _globalTooptipTO;
 
-  
+ 
   var windowDefaults = {
     width: 200,
     height: 300,
@@ -204,6 +208,8 @@
 
         ev.dataTransfer.setDragImage(div[0], ev.offsetX, ev.offsetY);
         ev.dataTransfer.effectAllowed = "move";
+        clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();
       }
       div[0].ondragend = function(ev) {
         _globalFakeItem.hide();
@@ -215,6 +221,27 @@
       div.appendTo(parent).css({
         left: (pos_x||0)*32,
         top: (pos_y||0)*32
+      });
+      div.mouseover(function(ev){
+        clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();     
+      });
+      div.mousemove(function(ev){
+        clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();
+         _globalTooptipTO = setTimeout(function(){
+          _globalTooltip.css({
+            width: 200,
+            height: 100,
+            left: ev.clientX + 10,
+            top: ev.clientY + 10
+          }).show();
+          _globalTooltip.html("<div style='color:gold; border-bottom: 1px solid #676a5a;font-weight:bold;'>Golden armour<span style='float:right'>legendarny</span></div><div style='color:#676a5a; border-bottom: 1px solid #676a5a;font-style:italic;font-size:9px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam maximus pulvinar iaculis. Curabitur eu scelerisque tellus. Duis scelerisque erat at erat cursus, in semper eros interdum. </div><table><tr><td align=left width=130>Pancerz</td><td align=right style='color:#00ff00;font-weight:bold;'>+14</td></tr><tr><td align=left width=130>Szybkość ataku</td><td align=right style='color:#ff0000;font-weight:bold;'>-2</td></tr></table>");
+        },1000);
+      });
+      div.mouseout(function(){
+          clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();
       });
       for(var i = 0; i < size_x; i ++) for(var j = 0; j < size_y; j ++) {
         parent[0].data[(pos_x||0)+i][(pos_y||0)+j] = 1;
@@ -249,6 +276,14 @@
       if(_globalResizedWindow){
         _globalResizedWindow = null;
       }
+    });
+    _globalTooltip.mousemove(function(ev){
+      clearTimeout(_globalTooptipTO);       
+    });
+    _globalTooltip.mouseout(function(){
+      _globalTooptipTO = setTimeout(function(){
+        _globalTooltip.hide();
+      },200);
     });
   });
 }( jQuery ));
