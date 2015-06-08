@@ -139,6 +139,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
           nextMove = this.data.moveQ.getMove();
         }
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
+        socket.emit('player-input-move', {x: nextMove[0]-this.data.tx, y: nextMove[1]-this.data.ty});
           this.data.animStart = frameTime;
           this.data.moving = true;
           map.free(this.data.x, this.data.y);
@@ -160,7 +161,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.move = function(dx, dy, dir){
     // socket.emit('player-input-move', {dx: dx, dy: dy});
-    socket.emit('player-input-move', {x: dx, y: dy});
+    
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
   }

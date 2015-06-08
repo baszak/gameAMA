@@ -5,7 +5,13 @@ var socket = io.connect('http://localhost:6767');
     if(serverDataInitialized){
       for(var i in data.playersData){
         if(!otherPlayers[i]) continue;
-          otherPlayers[i].data.moveBuffer.push({tx: data.playersData[i].tx, ty: data.playersData[i].ty})
+          otherPlayers[i].data.tx = data.playersData[i].tx;
+          otherPlayers[i].data.ty = data.playersData[i].ty;
+        if(otherPlayers[i].data.id == player_id){
+          player1.data.tx = data.playersData[i].tx;
+          player1.data.ty = data.playersData[i].ty;
+          console.log(data.playersData[i].tx,data.playersData[i].ty);
+        }
       }
       for(var i in data.mobs){
         if(!mobzz[data.mobs[i][6]]) continue;

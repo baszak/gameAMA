@@ -168,15 +168,16 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		direction: 0,
 		animStart: frameTime,
 		moving: false,
-		speedCur: speedCur,
+		speedCur: speedCur*0.8,
 		limboState: limboState || false,
 		healthMax: healthMax,
 		healthCur: healthCur,
 		moveBuffer: [],
 		isVisible: true
 	}
+  this.lastTime = frameTime;
 	this.update = function(){
-		if(!this.data.moving){
+		/*if(!this.data.moving){
 			for(var i=0; i<this.data.moveBuffer.length; i++){
 				if(this.data.tx == this.data.moveBuffer[0].tx && this.data.ty == this.data.moveBuffer[0].ty)
 					this.data.moveBuffer.shift();
@@ -187,12 +188,24 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 					this.data.moving = true;
 				}
 			}
-		}
+		}*/
 
-		this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
-    this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
+		//this.data.ax += (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
+    //this.data.ay += (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
 
-    if (Math.abs(this.data.ax) >= 1) {
+    if (Math.abs(this.data.x-this.data.tx) < 0.05) {
+      this.data.x = this.data.tx;
+    }else{
+    this.data.x += Math.sign(this.data.tx-this.data.x) * (frameTime - this.lastTime)/400;
+    }
+    if (Math.abs(this.data.y-this.data.ty) < 0.05) {
+      this.data.y=this.data.ty;
+    
+    }else{
+    this.data.y += Math.sign(this.data.ty-this.data.y) * (frameTime - this.lastTime)/400;
+    }
+    
+    /*if (Math.abs(this.data.ax) >= 1) {
       this.data.moving = false;
       this.data.x = this.data.tx;
       this.data.ax = 0;
@@ -201,7 +214,8 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
       this.data.moving = false;
       this.data.y = this.data.ty;
       this.data.ay = 0
-    }
+    }*/
+    this.lastTime = frameTime;
 	}
 	this.draw = function(ctx){
 		if(this.data.x < this.data.tx)

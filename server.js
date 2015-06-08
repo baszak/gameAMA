@@ -150,8 +150,7 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
   }
   for(var sId in onlinePlayersData)
     io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: export_mobs, timeStamp: frameTime});
-
-}, 1000/22);
+}, 1000/16);
 
 function Map(h, w){
   this.h = h;
@@ -280,7 +279,7 @@ function Player(id, spawn_x, spawn_y){
     manaRegen: 300,
     mmr: 1400,
     speedBase: 400,
-    speedCur: 400,
+    speedCur: 300,
     critChance: 0.5,
     critDamage: 1,
     //other shit
@@ -343,6 +342,8 @@ function Player(id, spawn_x, spawn_y){
           this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
           console.log('player ' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
+         // for(var sId in onlinePlayersData)
+          //  io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, timeStamp: frameTime});
         }
       }
     }
