@@ -46,25 +46,47 @@ io.on('connection', function (socket) {
       onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
 
     //notify all players that a player connected
-    for(var sId in onlinePlayersData)
-      io.to(sId).emit('player-connected', {id: socket.id, playerData: onlinePlayersData[socket.id]});
+    for(var sId in onlinePlayersData){
+      var export_data = {};
+      export_data.id = onlinePlayersData[socket.id].id;
+      export_data.level = onlinePlayersData[socket.id].level;
+      export_data.x = onlinePlayersData[socket.id].x;
+      export_data.y = onlinePlayersData[socket.id].y;
+      export_data.healthMax = onlinePlayersData[socket.id].healthMax;
+      export_data.healthCur = onlinePlayersData[socket.id].healthCur;
+      export_data.speedCur = onlinePlayersData[socket.id].speedCur;
+      export_data.name = onlinePlayersData[socket.id].name;
+      io.to(sId).emit('player-connected', export_data);
+    }
     //connecting player gets onlinePlayersData initially
     var export_mobs = {};
-    var mobsSent = 0;
     for(var i in mobzz){
       if(!neighbourChunk(onlinePlayersData[socket.id].chunk, mobzz[i].chunk))
         continue;
-      export_mobs[i] = [];
-      export_mobs[i][0] = mobzz[i].tx;
-      export_mobs[i][1] = mobzz[i].ty;
-      export_mobs[i][2] = mobzz[i].healthMax;
-      export_mobs[i][3] = mobzz[i].healthCur;
-      export_mobs[i][4] = mobzz[i].speed;
-      export_mobs[i][5] = mobzz[i].name;
-      export_mobs[i][6] = mobzz[i].id;
-      mobsSent++;
+      export_mobs[i] = {};
+      export_mobs[i].tx = mobzz[i].tx;
+      export_mobs[i].ty = mobzz[i].ty;
+      export_mobs[i].healthMax = mobzz[i].healthMax;
+      export_mobs[i].healthCur = mobzz[i].healthCur;
+      export_mobs[i].speed = mobzz[i].speed;
+      export_mobs[i].name = mobzz[i].name;
+      export_mobs[i].id = mobzz[i].id;
     }
-    io.to(socket.id).emit('player-initiate-current-objects', {players: onlinePlayersData, mobs: export_mobs, mobsSent: mobsSent});
+    var export_players = {};
+    for(var sId in onlinePlayersData){
+      if(!neighbourChunk(onlinePlayersData[socket.id].chunk, onlinePlayersData[sId].chunk))
+        continue;
+      export_players[sId] = {};
+      export_players[sId].id = onlinePlayersData[sId].id;
+      export_players[sId].level = onlinePlayersData[sId].level;
+      export_players[sId].x = onlinePlayersData[sId].x;
+      export_players[sId].y = onlinePlayersData[sId].y;
+      export_players[sId].healthMax = onlinePlayersData[sId].healthMax;
+      export_players[sId].healthCur = onlinePlayersData[sId].healthCur;
+      export_players[sId].speedCur = onlinePlayersData[sId].speedCur;
+      export_players[sId].name = onlinePlayersData[sId].name;
+    }
+    io.to(socket.id).emit('player-initiate-current-objects', {players: export_players, mobs: export_mobs});
 
   });
   socket.on('ping', function(data){
@@ -86,26 +108,26 @@ io.on('connection', function (socket) {
       var id = onlinePlayersData[socket.id].id;
       //pull disconnecting player back into database.
       console.log('disconnecting' + id);
-      map.free(allPlayers[id].data.tx, allPlayers[id].data.ty);
       //no longer update player that disconnected.
       delete onlinePlayersData[socket.id];
     }
-    for(var sId in onlinePlayersData)//tell all cleints that this socket.id is no more
-      io.to(sId).emit('player-disconnected', socket.id);
+    for(var sId in onlinePlayersData)//tell all clients that this id is no more
+      io.to(sId).emit('player-disconnected', onlinePlayersData[socket.id].id);
   });
 });
 function emitSpawning(foe){
   for(var sId in onlinePlayersData){
     if(!neighbourChunk(onlinePlayersData[sId].chunk, foe.chunk)) continue;
-    var export_array = [];
-    export_array[0] = foe.tx;
-    export_array[1] = foe.ty;
-    export_array[2] = foe.healthMax;
-    export_array[3] = foe.healthCur;
-    export_array[4] = foe.speed;
-    export_array[5] = foe.name;
-    export_array[6] = foe.id;
-    io.to(sId).emit('mob-spawned', export_array);
+    var export_mob = {};
+    export_mob.tx = foe.tx;
+    export_mob.ty = foe.ty;
+    export_mob.healthMax = foe.healthMax;
+    export_mob.healthCur = foe.healthCur;
+    export_mob.speed = foe.speed;
+    export_mob.name = foe.name;
+    export_mob.id = foe.id;
+    console.log(export_mob.id)
+    io.to(sId).emit('mob-spawned', export_mob);
   }
 }
 
@@ -139,17 +161,17 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
   //emit other player positions
   var export_mobs = {};
   for(var i in mobzz){
-    export_mobs[i] = [];
-    export_mobs[i][0] = mobzz[i].tx;
-    export_mobs[i][1] = mobzz[i].ty;
-    export_mobs[i][2] = mobzz[i].healthMax;
-    export_mobs[i][3] = mobzz[i].healthCur;
-    export_mobs[i][4] = mobzz[i].speed;
-    export_mobs[i][5] = mobzz[i].name;
-    export_mobs[i][6] = mobzz[i].id;
+    export_mobs[i] = {};
+    export_mobs[i].tx = mobzz[i].tx;
+    export_mobs[i].ty = mobzz[i].ty;
+    export_mobs[i].healthMax = mobzz[i].healthMax;
+    export_mobs[i].healthCur = mobzz[i].healthCur;
+    export_mobs[i].speed = mobzz[i].speed;
+    export_mobs[i].name = mobzz[i].name;
+    export_mobs[i].id = mobzz[i].id;
   }
   for(var sId in onlinePlayersData)
-    io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: export_mobs, timeStamp: frameTime});
+    io.to(sId).emit('data-update', export_mobs);
 }, 1000/16);
 
 function Map(h, w){
@@ -279,7 +301,7 @@ function Player(id, spawn_x, spawn_y){
     manaRegen: 300,
     mmr: 1400,
     speedBase: 400,
-    speedCur: 300,
+    speedCur: 400,
     critChance: 0.5,
     critDamage: 1,
     //other shit
@@ -342,8 +364,8 @@ function Player(id, spawn_x, spawn_y){
           this.data.ty = nextMove[1];
           map.occupy(this.data.tx, this.data.ty);
           console.log('player ' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
-         // for(var sId in onlinePlayersData)
-          //  io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, timeStamp: frameTime});
+          for(var sId in onlinePlayersData)
+            io.to(sId).emit('players-move-update', {tx: this.data.tx, ty: this.data.ty, id: this.data.id});
         }
       }
     }

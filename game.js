@@ -1,24 +1,26 @@
 var player_id = prompt('id: ');
 
 var socket = io.connect('http://localhost:6767');
-  socket.on('players-data-update', function(data){
-    if(serverDataInitialized){
-      for(var i in data.playersData){
-        if(!otherPlayers[i]) continue;
-          otherPlayers[i].data.tx = data.playersData[i].tx;
-          otherPlayers[i].data.ty = data.playersData[i].ty;
-        if(otherPlayers[i].data.id == player_id){
-          player1.data.tx = data.playersData[i].tx;
-          player1.data.ty = data.playersData[i].ty;
-          console.log(data.playersData[i].tx,data.playersData[i].ty);
-        }
-      }
-      for(var i in data.mobs){
-        if(!mobzz[data.mobs[i][6]]) continue;
-          mobzz[data.mobs[i][6]].data.moveBuffer.push({tx: data.mobs[i][0], ty: data.mobs[i][1]})
+socket.on('players-move-update', function(data){
+  if(serverDataInitialized){
+    if(otherPlayers[data.id]){
+      otherPlayers[data.id].data.tx = data.tx;
+      otherPlayers[data.id].data.ty = data.ty;
+      if(data.id == player_id){
+        player1.data.tx = data.tx;
+        player1.data.ty = data.ty;
       }
     }
-  });
+  }
+});
+socket.on('data-update', function (data){
+  for(var i in data){
+    if(!mobzz[data[i].id]) continue;
+      mobzz[data[i].id].data.tx = data[i].tx;
+      mobzz[data[i].id].data.ty = data[i].ty;
+  }
+})
+
 socket.on('player-disconnected', function (data){
   if(otherPlayers.hasOwnProperty(data))
     delete otherPlayers[data];
@@ -27,9 +29,8 @@ socket.on('ping back', function(data){
   console.log(frameTime - data);
 });
 socket.on('player-connected', function (data){
-  console.log('player ' + data.playerData.id + ' connected.');
-  otherPlayers[data.id] = new OtherPlayer(data.playerData.name, data.playerData.level, data.playerData.x, data.playerData.y, data.playerData.healthMax, data.playerData.healthCur, data.playerData.speedCur);
-  otherPlayers[data.id].data = data.playerData;
+  console.log('player ' + data.id + ' connected.');
+  otherPlayers[data.id] = new OtherPlayer(data.name, data.level, data.x, data.y, data.healthMax, data.healthCur, data.speedCur);
 });
 socket.on('player-login-success', function (data){
   statusMessage.showMessage('login succesful ' + data.id, 3000);
@@ -47,16 +48,15 @@ socket.on('send-map-world', function (data){
 socket.emit('player-login-attempt', player_id);
 socket.on('player-initiate-current-objects', function(data){
   for(var sId in data.players)
-    otherPlayers[sId] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
+    otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
   for(var i in data.mobs){
-    mobzz[data.mobs[i][6]] = new Mob(data.mobs[i][0], data.mobs[i][1], data.mobs[i][2], data.mobs[i][3], data.mobs[i][4], data.mobs[i][5]);
+    mobzz[data.mobs[i].id] = new Mob(data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
   }
-  console.log("sent " + data.mobsSent + " mobs");
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){
-  console.log('mob spawning emit')
-  mobzz[data[6]] = new Mob(data[0], data[1], data[2], data[3], data[4], data[5]);
+  console.log(data.id)
+  mobzz[data.id] = new Mob(data.tx, data.ty, data.healthMax, data.healthCur, data.speed, data.name);
 });
 
 var server_dataBuffer = [];
@@ -122,14 +122,14 @@ function handleClick(e) {
     clientX = Math.floor((mousepos.x - map.x)/gh);
     clientY = Math.floor((mousepos.y - map.y)/gh);
     player1.data.moveQ.findPath(player1.data.tx, player1.data.ty, clientX, clientY);
-    for(var i = mobzz.length; i--;) {
-      var enemy = mobzz[i];
-      if(Math.floor((mousepos.x - map.x)/gh) == enemy.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.ty){
-        if(targetedMob && targetedMob != enemy) targetedMob.isTargeted = false;
-          (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
-          player1.data.moveQ.currentPath = [];
-      }
-    }
+    // for(var i = mobzz.length; i--;) {
+    //   var enemy = mobzz[i];
+    //   if(Math.floor((mousepos.x - map.x)/gh) == enemy.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.ty){
+    //     if(targetedMob && targetedMob != enemy) targetedMob.isTargeted = false;
+    //       (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
+    //       player1.data.moveQ.currentPath = [];
+    //   }
+    // }
   }
 }
 function draw(ctx){
@@ -219,7 +219,7 @@ function checkInput(){
   if (key == "117"/* F6 */) {
     socket.emit('ping', frameTime);
   }
-  if (key == "32") autoTarget();
+  // if (key == "32") autoTarget();
   if (key == "49" || key == "97") player1.attack();
   player1["slot_"+ (key > 97 ? key - 97 : key -  49)] && player1["slot_"+ (key > 97 ? key - 97 : key -  49)]();
 
@@ -231,5 +231,5 @@ $(document).ready(function(){
   requestAnimationFrame(update);
   $(document).keydown(function(e){ lastKeyEvent = e; });
   $('img').mousemove(function(e){ mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)}; });
-  // $('img').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });
+  $('img').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });
 });

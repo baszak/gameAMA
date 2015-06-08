@@ -29,22 +29,19 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
     spriteN: spriteN || 8,
     isVisible: true
   }
+  this.lastTime = frameTime;
   this.update = function(){
-    if(!this.data.moving){
-      for(var i=0; i<this.data.moveBuffer.length; i++){
-        if(this.data.tx == this.data.moveBuffer[0].tx && this.data.ty == this.data.moveBuffer[0].ty)
-          this.data.moveBuffer.shift();
-        else{
-          this.data.tx = this.data.moveBuffer[0].tx;
-          this.data.ty = this.data.moveBuffer[0].ty;
-          this.data.animStart = frameTime;
-          this.data.moving = true;
-        }
-      }
-    }
-    this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speed;
-    this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speed;
-    
+    if (Math.abs(this.data.x-this.data.tx) < 0.05)
+      this.data.x = this.data.tx;
+    else
+      this.data.x += Math.sign(this.data.tx-this.data.x) * (frameTime - this.lastTime)/speed;
+    if (Math.abs(this.data.y-this.data.ty) < 0.05)
+      this.data.y=this.data.ty;
+    else
+    this.data.y += Math.sign(this.data.ty-this.data.y) * (frameTime - this.lastTime)/speed; 
+
+
+
     if (Math.abs(this.data.ax) >= 1) {
       this.data.moving = false;
       this.data.x = this.data.tx;
@@ -56,8 +53,7 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
       this.data.y = this.data.ty;
       this.data.ay = 0;
     }
-    if(this.data.moveBuffer.length > 20)
-      this.data.moveBuffer.shift();
+    this.lastTime = frameTime;
   }
   this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
