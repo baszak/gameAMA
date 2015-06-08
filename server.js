@@ -50,11 +50,10 @@ io.on('connection', function (socket) {
       io.to(sId).emit('player-connected', {id: socket.id, playerData: onlinePlayersData[socket.id]});
     //connecting player gets onlinePlayersData initially
     var export_mobs = {};
+    var mobsSent = 0;
     for(var i in mobzz){
-      console.log('iterating mobzz' + mobzz.length)
-      if(!neighborChunk(onlinePlayersData[socket.id].chunk, mobzz[i].chunk))
+      if(!neighbourChunk(onlinePlayersData[socket.id].chunk, mobzz[i].chunk))
         continue;
-      console.log('emiting something?')
       export_mobs[i] = [];
       export_mobs[i][0] = mobzz[i].tx;
       export_mobs[i][1] = mobzz[i].ty;
@@ -63,15 +62,15 @@ io.on('connection', function (socket) {
       export_mobs[i][4] = mobzz[i].speed;
       export_mobs[i][5] = mobzz[i].name;
       export_mobs[i][6] = mobzz[i].id;
+      mobsSent++;
     }
-    io.to(socket.id).emit('player-initiate-current-objects', {players: onlinePlayersData, mobs: export_mobs});
+    io.to(socket.id).emit('player-initiate-current-objects', {players: onlinePlayersData, mobs: export_mobs, mobsSent: mobsSent});
 
   });
   socket.on('ping', function(data){
     io.to(socket.id).emit('ping back', data);
     console.log(onlinePlayersData[socket.id].x, onlinePlayersData[socket.id].y);
-    // for(var i in allPlayers)
-    //   console.log(allPlayers[i].data.chunk);
+    console.log(mobzz.length)
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -97,7 +96,7 @@ io.on('connection', function (socket) {
 });
 function emitSpawning(foe){
   for(var sId in onlinePlayersData){
-    if(!neighborChunk(onlinePlayersData[sId].chunk, foe.chunk)) continue;
+    if(!neighbourChunk(onlinePlayersData[sId].chunk, foe.chunk)) continue;
     var export_array = [];
     export_array[0] = foe.tx;
     export_array[1] = foe.ty;
@@ -149,8 +148,6 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
     export_mobs[i][5] = mobzz[i].name;
     export_mobs[i][6] = mobzz[i].id;
   }
-
-
   for(var sId in onlinePlayersData)
     io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: export_mobs, timeStamp: frameTime});
 
@@ -208,9 +205,9 @@ function MonsterSpawner(){//server only
   this.populateMobs = function(){
   // for(var i = 0; i< 10000; i++)
   this.createSpawn(Bat, 7, 9, 2);
-  this.createSpawn(Bat, 19, 18, 8);
-  this.createSpawn(Bat, 12, 20, 8);
-  this.createSpawn(Bat, 12, 9, 8);
+  this.createSpawn(BigBat, 19, 18, 8);
+  this.createSpawn(BigBat, 12, 20, 8);
+  this.createSpawn(BigBat, 12, 9, 8);
   // this.createSpawn(Shroom, 33, 6, 8);
 }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
@@ -264,7 +261,7 @@ function Player(id, spawn_x, spawn_y){
     ty: spawn_y,
     ax: 0,
     ay: 0,
-    chunk: [0, 0],
+    chunk: [Math.floor(spawn_x/game_size.w), Math.floor(spawn_y/game_size.h)],
     direction: 0,
     //rpg shit
     level : 1,
@@ -314,6 +311,7 @@ function Player(id, spawn_x, spawn_y){
                         backpack: []
                       }
   }
+  console.log(this.data.chunk[0], this.data.chunk[1])
   this.update = function(){
     this.data.lastChunk = this.data.chunk;
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
@@ -469,8 +467,8 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.tx = this.x;
   this.ty = this.y;
   this.chunk = [];
-  this.chunk[0] = this.tx;
-  this.chunk[1] = this.ty;
+  this.chunk[0] = Math.floor(this.tx/game_size.w),
+  this.chunk[1] = Math.floor(this.ty/game_size.h),
   this.mobile = mobile;
   this.moveQ = new MovementQueue();
   this.targetId;
@@ -547,22 +545,16 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   }
   this.passiveMovement = function(){
     if(frameTime-this.lastMoved > this.moveInterval){
-      if(Math.random()<0.5){
-        var cx = (Math.random() < (this.x - this.spawnPoint.x + 4)/8)?1:-1;
-        if(map.isValid(this.x-cx, this.y)){
+      var cx=0, cy=0;
+      if(Math.random()<0.5)
+        cx = (Math.random() < (this.x - this.spawnPoint.x + 4)/8)?1:-1;
+      else
+        cy = (Math.random() < (this.y - this.spawnPoint.y + 4)/8)?1:-1;
+      if(map.isValid(this.x-cx, this.y-cy)){
           if(!this.moving){
-            this.rlyMove(this.x - cx, this.ty);
+            this.rlyMove(this.x - cx, this.ty -cy);
           }
         }
-      }
-      else{
-        var cy = (Math.random() < (this.y - this.spawnPoint.y + 4)/8)?1:-1;
-        if(map.isValid(this.x, this.y-cy)){
-          if(!this.moving){
-            this.rlyMove(this.tx, this.y - cy);
-          }
-        }
-      }
       this.lastMoved = frameTime;
     }
     return this;
@@ -648,7 +640,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   }
 }
 
-function neighborChunk(p_c, o_c){
+function neighbourChunk(p_c, o_c){
   return (o_c[0] >= p_c[0]-1 && o_c[0] <= p_c[0]+1 && o_c[1] >= p_c[1]-1 && o_c[1] <= p_c[1]+1)?true:false;
 }
 
@@ -679,7 +671,7 @@ Ahmed.prototype.constructor = Ahmed;
 
 
 function BigBat(id, spawn_x, spawn_y){
-  Foe.call(this,'Big Bat','img/bat_sprite_big.png',id,spawn_x,spawn_y,true);
+  Foe.call(this,'BigBat','img/bat_sprite_big.png',id,spawn_x,spawn_y,true);
   this.healthMax = 800;
   this.healthCur = 800;
   this.exp = 1200;

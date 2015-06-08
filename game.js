@@ -8,8 +8,8 @@ var socket = io.connect('http://localhost:6767');
           otherPlayers[i].data.moveBuffer.push({tx: data.playersData[i].tx, ty: data.playersData[i].ty})
       }
       for(var i in data.mobs){
-        if(!mobzz[i]) continue;
-          mobzz[i].data.moveBuffer.push({tx: data.mobs[i].tx, ty: data.mobs[i].ty})
+        if(!mobzz[data.mobs[i][6]]) continue;
+          mobzz[data.mobs[i][6]].data.moveBuffer.push({tx: data.mobs[i][0], ty: data.mobs[i][1]})
       }
     }
   });
@@ -43,13 +43,13 @@ socket.on('player-initiate-current-objects', function(data){
   for(var sId in data.players)
     otherPlayers[sId] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
   for(var i in data.mobs){
-    mobzz[data.mobs[6]] = new Mob(data.mobs[i][0], data.mobs[i][1], data.mobs[i][2], data.mobs[i][3, data.mobs[i][4]], data.mobs[i][5]);
-    console.log(mobzz[data[6]].img.src)
+    mobzz[data.mobs[i][6]] = new Mob(data.mobs[i][0], data.mobs[i][1], data.mobs[i][2], data.mobs[i][3], data.mobs[i][4], data.mobs[i][5]);
   }
+  console.log("sent " + data.mobsSent + " mobs");
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){
-  console.log('gets here')
+  console.log('mob spawning emit')
   mobzz[data[6]] = new Mob(data[0], data[1], data[2], data[3], data[4], data[5]);
 });
 
@@ -143,7 +143,6 @@ function draw(ctx){
   for(var i in mobzz) mobzz[i].draw(ctx);
 
 
-  // drawPlayers(ctx);
   if(showBackpack){
     ctx.font = "12px Impact";
     for(var i=0, j=0, k=0; i<player1.data.equipment.backpack.contents.length; i++, j++){
@@ -158,21 +157,6 @@ function draw(ctx){
         ctx.fillText(player1.data.equipment.backpack.contents[i].name, 400+j*gh - map.x, gh*k+166 -map.y);
     }
   }
-
-//************ DRAW MOBS FROM SERVER *** deving
-  ctx.fillStyle = 'green';
-  for(var i in mobzz){
-    var animationFrame = Math.floor(frameTime / mobzz[i].animationSpeed)%mobzz[i].spriteN;
-    ctx.fillRect((mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
-    // ctx.drawImage(tempImg, animationFrame*mobzz[i].spriteX, 0, mobzz[i].spriteX, mobzz[i].spriteY, (mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
-    if(targetedMob == mobzz[i]){
-      ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-      ctx.strokeRect((mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
-    }
-  }
-//********************************************************//
-//********** DRAW OTHER PLAYERS FROM SERVER *************//
-
   missiles.draw(ctx);
   for(var i = 0; i<popups.length; i++) popups[i].draw(ctx);
 
@@ -205,6 +189,7 @@ function update(){
   // for(var i=0; i < mobzz.length; i++) {mobzz[i].update(); }
   player1.update();
   for(var i in otherPlayers) otherPlayers[i].update();
+  for(var i in mobzz) mobzz[i].update();
 
   // spawner.update();
   missiles.update();

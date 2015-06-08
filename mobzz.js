@@ -3,7 +3,7 @@ tempImg.src = 'img/bat_sprite.png';
 
 var UrlDict = {
   'Bat':      'img/bat_sprite.png',
-  'Big Bat':  'img/bat_sprite_big.png'
+  'BigBat':  'img/bat_sprite_big.png'
 }
 
 function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, spriteN){
@@ -56,6 +56,8 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
       this.data.y = this.data.ty;
       this.data.ay = 0;
     }
+    if(this.data.moveBuffer.length > 20)
+      this.data.moveBuffer.shift();
   }
   this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
