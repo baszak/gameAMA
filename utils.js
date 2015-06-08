@@ -109,7 +109,7 @@ function levelUp(player){
 	if(player.level>9)
 		player.skillPoints++;
 	player.attrPoints += 3;
-	player.speedBase = 600 - 0.9*(player.level - 1);
+	player.speedBase = 400 - 0.9*(player.level - 1);
   statusMessage.showMessage("You advanced to level " + player.level, 3000);
 }
 function levelDown(player){
@@ -173,7 +173,8 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		healthMax: healthMax,
 		healthCur: healthCur,
 		moveBuffer: [],
-		isVisible: true
+		isVisible: true,
+		isTargeted: false
 	}
   this.lastTime = frameTime;
 	this.update = function(){

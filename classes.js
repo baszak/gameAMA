@@ -11,14 +11,14 @@ function Map(url, w, h){
   this.y = -45*gh;
   this.world = [[]];
 	this.update = function(player){
-    if ((player.x+player.ax)*gh + this.x > (game_size.w-5)*gh)
-      this.x = Math.max((game_size.w-5-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
-    if ((player.x+player.ax)*gh + this.x < 4*gh)
-      this.x = Math.min(-(player.x+player.ax-4)*gh,0);
-    if ((player.y+player.ay)*gh + this.y > (game_size.h-5)*gh) 
-      this.y = Math.max((game_size.h-5-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
-    if ((player.y+player.ay)*gh + this.y < 4*gh)
-      this.y = Math.min(-(player.y+player.ay-4)*gh,0);
+    if ((player.x+player.ax)*gh + this.x > (game_size.w-17)*gh)
+      this.x = Math.max((game_size.w-17-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
+    if ((player.x+player.ax)*gh + this.x < 15*gh)
+      this.x = Math.min(-(player.x+player.ax-15)*gh,0);
+    if ((player.y+player.ay)*gh + this.y > (game_size.h-9)*gh) 
+      this.y = Math.max((game_size.h-9-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
+    if ((player.y+player.ay)*gh + this.y < 7*gh)
+      this.y = Math.min(-(player.y+player.ay-7)*gh,0);
 	}
   this.drawBackground = function(ctx){
     ctx.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
@@ -142,10 +142,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         socket.emit('player-input-move', {x: nextMove[0]-this.data.tx, y: nextMove[1]-this.data.ty});
           this.data.animStart = frameTime;
           this.data.moving = true;
-          map.free(this.data.x, this.data.y);
+          // map.free(this.data.x, this.data.y);
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
-          map.occupy(this.data.tx, this.data.ty);
+          // map.occupy(this.data.tx, this.data.ty);
         }
       }
     }
@@ -309,7 +309,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.defenseRating = 0;
   this.loot = {gold: 0, silver: 0, copper: Math.floor(Math.random()*100)%25};
   
-  map.occupy(this.x, this.y);
+  // map.occupy(this.x, this.y);
 
 	this.update = function(){
     // var kara = Math.sqrt((this.tx - this.x)*(this.tx - this.x) + (this.ty - this.y)*(this.ty - this.y));
@@ -338,9 +338,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 	this.rlyMove = function(tx,ty){
     this.animStart = frameTime;
     this.moving = true;
-    map.free(this.x, this.y);
+    // map.free(this.x, this.y);
     this.tx = tx; this.ty = ty;
-    map.occupy(this.tx, this.ty);
+    // map.occupy(this.tx, this.ty);
   }
   this.move = function(){
     if(!this.mobile) return;
@@ -449,7 +449,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
           popups.push(new numberPopup(players[j], exp, 'exp', 1800));
         }
         mobzz.splice(i,1);
-        map.free(this.tx, this.ty);
+        // map.free(this.tx, this.ty);
         this.dropLoot();
         if(this.id == targetedMob.id)
           targetedMob = 0;

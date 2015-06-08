@@ -359,10 +359,10 @@ function Player(id, spawn_x, spawn_y){
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
           this.data.animStart = frameTime;
           this.data.moving = true;
-          map.free(this.data.x, this.data.y);
+          // map.free(this.data.x, this.data.y);
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
-          map.occupy(this.data.tx, this.data.ty);
+          // map.occupy(this.data.tx, this.data.ty);
           console.log('player ' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
           for(var sId in onlinePlayersData)
             io.to(sId).emit('players-move-update', {tx: this.data.tx, ty: this.data.ty, id: this.data.id});
@@ -512,7 +512,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.defenseRating = 0;
   this.loot = {gold: 0, silver: 0, copper: Math.floor(Math.random()*100)%25};
   
-  map.occupy(this.x, this.y);
+  // map.occupy(this.x, this.y);
 
   this.update = function(){
     // var kara = Math.sqrt((this.tx - this.x)*(this.tx - this.x) + (this.ty - this.y)*(this.ty - this.y));
@@ -543,9 +543,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.rlyMove = function(tx,ty){
     this.animStart = frameTime;
     this.moving = true;
-    map.free(this.x, this.y);
+    // map.free(this.x, this.y);
     this.tx = tx; this.ty = ty;
-    map.occupy(this.tx, this.ty);
+    // map.occupy(this.tx, this.ty);
   }
   this.move = function(){
     if(!this.mobile) return;
@@ -643,7 +643,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     for(var i=0; i<mobzz.length; i++){
       if(mobzz[i] == this){
         mobzz.splice(i,1);
-        map.free(this.tx, this.ty);
+        // map.free(this.tx, this.ty);
         this.dropExperience(killerId);
         this.dropLoot();
         this.isDead = true;
