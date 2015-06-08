@@ -1,3 +1,6 @@
+var ifac = new ItemFactory();
+
+
 
 function Item(id, name, stackable, quantity){
   this.id = id;
@@ -17,7 +20,14 @@ function Weapon(id, name, stackable, quantity, level, damageMin, damageMax, dama
   this.range = range;
 }
 
-function WeaponFactory(){
+Armor.prototype = Object.create(Item.prototype);
+Armor.prototype.constructor = Weapon;
+function Armor(id, name, stackable, quantity, rating, dmgred){
+	Item.call(this, id, name, stackable, quantity);
+	this.rating = rating;
+	this.dmgReduction = dmgred;
+}
+function ItemFactory(){
 	this.curId = 0;
 	this.createWeapon = function(level){
 		var baseDmg = Math.abs(level*level/24);
@@ -32,10 +42,46 @@ function WeaponFactory(){
 	this.createMoney = function(quantity){
 		return (new Item(this.curId++, 'gold', true, quantity));
 	}
+	this.createArmor = function(level){
+		var rating = level;
+		var dmgred = 0;
+		return (new Armor(this.curId++, 'armor', false, 1, rating, dmgred));
+	}
 }
-var wf = new WeaponFactory();
 
+function Container(max_size, parent_container){
+  this.name = 'container';
+  this.size = max_size || 16;
+  this.contents = [];
 
+  this.getFirstEmptyIndex = function(){
+    for(var i = 0; i < this.size; i++){
+      if(!this.contents[i]){
+        return i;
+      }
+    }
+    return (-1);
+  }
+  this.addItem = function(item, position){
+    var index = this.getFirstEmptyIndex();
+    if(index == -1) return;
+    if(position >= this.size) return;
+    if(this.contents[position]){
+      if(this.contents[position].name == item.name && item.stackable){
+        this.stackItem(this.contents[position], item);
+        return;
+      }
+      this.contents[index] = item;
+    }
+    else{
+      this.contents[position] = item;
+    }
+  }
+  this.stackItem = function(item1, item2){
+    item1.quantity += item2.quantity;
+    console.log('stacking')
+  }
+}
 
 
 

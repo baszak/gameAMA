@@ -102,7 +102,7 @@ function calcDamage(attacker, enemy){
 	return (damage>=0)?Math.round(damage):0;//keep it in integers
 }
 function updateStats(player){
-	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
+	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * (1-player.equipment.boots.speedMod)):80;//speed cap at 80.less is faster
 }
 function levelUp(player){
 	player.level++;
@@ -172,7 +172,8 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		limboState: limboState || false,
 		healthMax: healthMax,
 		healthCur: healthCur,
-		moveBuffer: []
+		moveBuffer: [],
+		isVisible: true
 	}
 	this.update = function(){
 		if(!this.data.moving){

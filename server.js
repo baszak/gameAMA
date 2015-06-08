@@ -49,18 +49,30 @@ io.on('connection', function (socket) {
     for(var sId in onlinePlayersData)
       io.to(sId).emit('player-connected', {id: socket.id, playerData: onlinePlayersData[socket.id]});
     //connecting player gets onlinePlayersData initially
-    io.to(socket.id).emit('player-initiate-other-players', onlinePlayersData);
+    var export_mobs = {};
+    for(var i in mobzz){
+      console.log('iterating mobzz' + mobzz.length)
+      if(!neighborChunk(onlinePlayersData[socket.id].chunk, mobzz[i].chunk))
+        continue;
+      console.log('emiting something?')
+      export_mobs[i] = [];
+      export_mobs[i][0] = mobzz[i].tx;
+      export_mobs[i][1] = mobzz[i].ty;
+      export_mobs[i][2] = mobzz[i].healthMax;
+      export_mobs[i][3] = mobzz[i].healthCur;
+      export_mobs[i][4] = mobzz[i].speed;
+      export_mobs[i][5] = mobzz[i].name;
+      export_mobs[i][6] = mobzz[i].id;
+    }
+    io.to(socket.id).emit('player-initiate-current-objects', {players: onlinePlayersData, mobs: export_mobs});
 
   });
-  /*socket.on('players-data-update', function (data) {//not used
-    onlinePlayersData[socket.id] = data;
-
-  });*/
   socket.on('ping', function(data){
     io.to(socket.id).emit('ping back', data);
     console.log(onlinePlayersData[socket.id].x, onlinePlayersData[socket.id].y);
-    console.log(socket.conn.address);
-  })
+    // for(var i in allPlayers)
+    //   console.log(allPlayers[i].data.chunk);
+  });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
       var id = onlinePlayersData[socket.id].id;
@@ -83,13 +95,27 @@ io.on('connection', function (socket) {
       io.to(sId).emit('player-disconnected', socket.id);
   });
 });
+function emitSpawning(foe){
+  for(var sId in onlinePlayersData){
+    if(!neighborChunk(onlinePlayersData[sId].chunk, foe.chunk)) continue;
+    var export_array = [];
+    export_array[0] = foe.tx;
+    export_array[1] = foe.ty;
+    export_array[2] = foe.healthMax;
+    export_array[3] = foe.healthCur;
+    export_array[4] = foe.speed;
+    export_array[5] = foe.name;
+    export_array[6] = foe.id;
+    io.to(sId).emit('mob-spawned', export_array);
+  }
+}
 
 
 var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/update
   frameTime = new Date().getTime();
-//server side game physics are all calculated here
-//client veirfication goes here
-//take client input and process
+  //server side game physics are all calculated here
+  //client veirfication goes here
+  //take client input and process
 
 
   for(var sId in onlinePlayersData){
@@ -107,14 +133,26 @@ var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/up
 }, 1000/60);
 
 var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/update
-//all client server comunication goes here
-//send game-state to all clients
-//emit appropriate map.worldPart
-//emit mobs
-//emit other player positions
+  //all client server comunication goes here
+  //send game-state to all clients
+  //emit appropriate map.worldPart
+  //emit mobs
+  //emit other player positions
+  var export_mobs = {};
+  for(var i in mobzz){
+    export_mobs[i] = [];
+    export_mobs[i][0] = mobzz[i].tx;
+    export_mobs[i][1] = mobzz[i].ty;
+    export_mobs[i][2] = mobzz[i].healthMax;
+    export_mobs[i][3] = mobzz[i].healthCur;
+    export_mobs[i][4] = mobzz[i].speed;
+    export_mobs[i][5] = mobzz[i].name;
+    export_mobs[i][6] = mobzz[i].id;
+  }
+
 
   for(var sId in onlinePlayersData)
-    io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: mobzz, timeStamp: frameTime});
+    io.to(sId).emit('players-data-update', {playersData: onlinePlayersData, mobs: export_mobs, timeStamp: frameTime});
 
 }, 1000/22);
 
@@ -165,15 +203,15 @@ function Map(h, w){
 
 
 function MonsterSpawner(){//server only
-  var k = 0;
+  var curId = 0;
   this.spawns = [];
   this.populateMobs = function(){
   // for(var i = 0; i< 10000; i++)
-  this.createSpawn(Bat, 7, 9, 5);
-  this.createSpawn(Bat, 19, 18, 45);
-  this.createSpawn(Bat, 12, 20, 45);
-  this.createSpawn(Bat, 12, 9, 45);
-  // this.createSpawn(Shroom, 33, 6, 45);
+  this.createSpawn(Bat, 7, 9, 2);
+  this.createSpawn(Bat, 19, 18, 8);
+  this.createSpawn(Bat, 12, 20, 8);
+  this.createSpawn(Bat, 12, 9, 8);
+  // this.createSpawn(Shroom, 33, 6, 8);
 }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
@@ -188,9 +226,10 @@ function MonsterSpawner(){//server only
   this.update = function(){
     for(var i = 0; i < this.spawns.length; i++) {
       if(!this.spawns[i].foe && frameTime - this.spawns[i].died_at > this.spawns[i].respawn_time*1000) {
-        this.spawns[i].foe = new this.spawns[i].foe_class(k++,this.spawns[i].spawn_x,this.spawns[i].spawn_y)        
-        console.log('pushing monster to mobzz');
+        this.spawns[i].foe = new this.spawns[i].foe_class(curId++,this.spawns[i].spawn_x,this.spawns[i].spawn_y)        
+        console.log('pushing ' + this.spawns[i].foe.name + ' to mobzz');
         mobzz.push(this.spawns[i].foe);
+        emitSpawning(this.spawns[i].foe);
       }else if(this.spawns[i].foe && this.spawns[i].foe.isDead) {
         this.spawns[i].died_at = frameTime;
         this.spawns[i].foe = null;
@@ -223,6 +262,9 @@ function Player(id, spawn_x, spawn_y){
     y: spawn_y,
     tx: spawn_x,
     ty: spawn_y,
+    ax: 0,
+    ay: 0,
+    chunk: [0, 0],
     direction: 0,
     //rpg shit
     level : 1,
@@ -273,6 +315,7 @@ function Player(id, spawn_x, spawn_y){
                       }
   }
   this.update = function(){
+    this.data.lastChunk = this.data.chunk;
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
     this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
     
@@ -313,6 +356,9 @@ function Player(id, spawn_x, spawn_y){
     //handling regen. to be rewritten into ticks? maybe regen every sec to avoid floats
     this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
     this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
+
+    this.data.chunk[0] = Math.floor(this.data.tx/32);
+    this.data.chunk[1] = Math.floor(this.data.ty/16);
   }
   this.move = function(dx, dy, dir){
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
@@ -422,6 +468,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.moveInterval = 1500;
   this.tx = this.x;
   this.ty = this.y;
+  this.chunk = [];
+  this.chunk[0] = this.tx;
+  this.chunk[1] = this.ty;
   this.mobile = mobile;
   this.moveQ = new MovementQueue();
   this.targetId;
@@ -465,7 +514,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     this.aggroCheck();
     this.move();
     this.attack();
-    return this;
+    this.chunk[0] = Math.floor(this.tx/32);
+    this.chunk[1] = Math.floor(this.ty/16);
+    return this;//why?
   }
   
   this.rlyMove = function(tx,ty){
@@ -534,6 +585,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
       else{//no target -> look for target
         for(var i in onlinePlayersData){
           var id = onlinePlayersData[i].id;
+          if(!allPlayers[id]) continue;
           if(dist(this, allPlayers[id].data) < this.aggroRange && allPlayers[id].data.isVisible){
             this.aggro = true;
             this.targetId = id;
@@ -596,6 +648,9 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   }
 }
 
+function neighborChunk(p_c, o_c){
+  return (o_c[0] >= p_c[0]-1 && o_c[0] <= p_c[0]+1 && o_c[1] >= p_c[1]-1 && o_c[1] <= p_c[1]+1)?true:false;
+}
 
 function calcDamage(attacker, enemy){
   var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;

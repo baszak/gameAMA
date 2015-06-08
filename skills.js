@@ -154,6 +154,12 @@ function Explosion(){
 
   }
 }
-function SkillTree(){
-  this.attributePoints = 0;
-}
+// **************** ATTRIBUTE SPENDING SHIT ***********************
+
+
+
+
+
+
+
+

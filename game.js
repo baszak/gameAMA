@@ -7,11 +7,15 @@ var socket = io.connect('http://localhost:6767');
         if(!otherPlayers[i]) continue;
           otherPlayers[i].data.moveBuffer.push({tx: data.playersData[i].tx, ty: data.playersData[i].ty})
       }
+      for(var i in data.mobs){
+        if(!mobzz[i]) continue;
+          mobzz[i].data.moveBuffer.push({tx: data.mobs[i].tx, ty: data.mobs[i].ty})
+      }
     }
-    server_mobzz = data.mobs;
   });
 socket.on('player-disconnected', function (data){
-  delete otherPlayers[data];
+  if(otherPlayers.hasOwnProperty(data))
+    delete otherPlayers[data];
 });
 socket.on('ping back', function(data){
   console.log(frameTime - data);
@@ -35,14 +39,22 @@ socket.on('send-map-world', function (data){
   map.world = data;
 });
 socket.emit('player-login-attempt', player_id);
-socket.on('player-initiate-other-players', function(data){
-  for(var sId in data)
-    otherPlayers[sId] = new OtherPlayer(data[sId].id, data[sId].name, data[sId].level, data[sId].x, data[sId].y, data[sId].healthMax , data[sId].healthCur , data[sId].speedCur);
+socket.on('player-initiate-current-objects', function(data){
+  for(var sId in data.players)
+    otherPlayers[sId] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
+  for(var i in data.mobs){
+    mobzz[data.mobs[6]] = new Mob(data.mobs[i][0], data.mobs[i][1], data.mobs[i][2], data.mobs[i][3, data.mobs[i][4]], data.mobs[i][5]);
+    console.log(mobzz[data[6]].img.src)
+  }
   serverDataInitialized = true;
+});
+socket.on('mob-spawned', function (data){
+  console.log('gets here')
+  mobzz[data[6]] = new Mob(data[0], data[1], data[2], data[3], data[4], data[5]);
 });
 
 var server_dataBuffer = [];
-var server_mobzz = [];
+var mobzz = {};
 var gh = 32;
 var game_size = {w: 32, h: 16};
 var map = new Map(null, 75, 75);
@@ -68,7 +80,6 @@ var otherPlayers = {};
 var showBackpack = false;
 // players.push(new Player("img/training_dummy.png", 2));//just for testing. doesnt get drawn
 
-// var mobzz = [];
 // var spawner = new MonsterSpawner();
 // spawner.populateMobs();
 
@@ -129,6 +140,7 @@ function draw(ctx){
 
   player1.draw(ctx);
   for(var i in otherPlayers) otherPlayers[i].draw(ctx);
+  for(var i in mobzz) mobzz[i].draw(ctx);
 
 
   // drawPlayers(ctx);
@@ -149,13 +161,13 @@ function draw(ctx){
 
 //************ DRAW MOBS FROM SERVER *** deving
   ctx.fillStyle = 'green';
-  for(var i in server_mobzz){
-    var animationFrame = Math.floor(frameTime / server_mobzz[i].animationSpeed)%server_mobzz[i].spriteN;
-    ctx.fillRect((server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
-    // ctx.drawImage(tempImg, animationFrame*server_mobzz[i].spriteX, 0, server_mobzz[i].spriteX, server_mobzz[i].spriteY, (server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
-    if(targetedMob == server_mobzz[i]){
+  for(var i in mobzz){
+    var animationFrame = Math.floor(frameTime / mobzz[i].animationSpeed)%mobzz[i].spriteN;
+    ctx.fillRect((mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
+    // ctx.drawImage(tempImg, animationFrame*mobzz[i].spriteX, 0, mobzz[i].spriteX, mobzz[i].spriteY, (mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
+    if(targetedMob == mobzz[i]){
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-      ctx.strokeRect((server_mobzz[i].x + server_mobzz[i].ax)*gh, (server_mobzz[i].y + server_mobzz[i].ay)*gh, gh, gh);
+      ctx.strokeRect((mobzz[i].x + mobzz[i].ax)*gh, (mobzz[i].y + mobzz[i].ay)*gh, gh, gh);
     }
   }
 //********************************************************//

@@ -111,7 +111,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
                         secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
-                        boots: {speedMod: 1},
+                        boots: {speedMod: 0},
                         head: {},
                         backpack: new Container
                       }
@@ -160,9 +160,9 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.move = function(dx, dy, dir){
     // socket.emit('player-input-move', {dx: dx, dy: dy});
+    socket.emit('player-input-move', {x: dx, y: dy});
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
-    socket.emit('player-input-move', {x: dx, y: dy, time: frameTime});
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
@@ -420,7 +420,6 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
       ctx.strokeRect((this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
     }
-    
 	}
   this.takeDamage = function(attacker, damage, debuff){
     this.damage = Math.min(damage, this.healthCur);
@@ -776,36 +775,3 @@ function EntityManager(){
 }
 
 //create function returning damage, taking attacker and attacked as arguments
-function Container(max_size, parent_container){
-  this.name = 'container';
-  this.size = max_size || 16;
-  this.contents = [];
-
-  this.getFirstEmptyIndex = function(){
-    for(var i = 0; i < this.size; i++){
-      if(!this.contents[i]){
-        return i;
-      }
-    }
-    return (-1);
-  }
-  this.addItem = function(item, position){
-    var index = this.getFirstEmptyIndex();
-    if(index == -1) return;
-    if(position >= this.size) return;
-    if(this.contents[position]){
-      if(this.contents[position].name == item.name && item.stackable){
-        this.stackItem(this.contents[position], item);
-        return;
-      }
-      this.contents[index] = item;
-    }
-    else{
-      this.contents[position] = item;
-    }
-  }
-  this.stackItem = function(item1, item2){
-    item1.quantity += item2.quantity;
-    console.log('stacking')
-  }
-}
