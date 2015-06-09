@@ -46,6 +46,7 @@
 html, body {
   height: 100%;
   background-image:url(img/bg.png);
+  margin: 0;
 } 
 
 input {
