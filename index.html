@@ -24,7 +24,7 @@
 <div class='window' id='win2'></div>
 <!--<div style='position:absolute;left:0;top:0;width:100%;height:100%;background-color:#676a5a;opacity:0.4' id='modal'></div>-->
 <div class='window' id='win3'></div>
-
+<div class='window' id='win4'></div>
 <img src='img/item.gif' id='item'>
 <img src='img/item2.gif' id='item2'>
 <img src='img/item3.png' id='item3'>
@@ -59,6 +59,55 @@ $(".slot").makeContainter();
   $("#item3").makeItem(2,2,$($(".slot")[0]));
 $("#item4").makeItem(2,3,$($(".slot")[0]));
 
+$("#win4").makeWindow({title: "Skills"});
+$("#win4").changeWindowProp({content: "<img src='http://i.ytimg.com/vi/bOzpup-zMZ8/maxresdefault.jpg' id ='map'>"});
+var scale = 1;
+$("#map").parent()[0].onwheel = function(e){
+  var off = $("#map").parent().offset();
+  off.top = e.clientY-off.top;
+  off.left = e.clientX-off.left;
+  var mapoff = {
+   top: off.top + $("#map").parent().scrollTop(),
+   left: off.left + $("#map").parent().scrollLeft()
+  }
+  var oldh = $("#map").height();
+  var oldw = $("#map").width();
+  $("#map").height(Math.max($("#map").height()-e.deltaY, 200));
+  mapoff.top = $("#map").height()*mapoff.top / oldh;
+  mapoff.left = $("#map").width()*mapoff.left / oldw;
+  $("#map").parent().scrollTop(mapoff.top-off.top);
+  $("#map").parent().scrollLeft(mapoff.left-off.left);
+  e.preventDefault();
+  return false;
+};
+
+var _globalObjectDragged;
+var _globalObjectAnchor;
+$("#map").mousedown(function(e){
+  var div = $(this);
+  _globalObjectDragged = div;
+  _globalObjectAnchor = [e.clientX-div.position().left, e.clientY-div.position().top];
+  e.preventDefault();
+  return false;
+});
+
+$(document).ready(function(){
+  $(document.body).mousemove(function(e) {
+    if(_globalObjectDragged){      
+      _globalObjectDragged.parent().scrollTop(-e.clientY + _globalObjectAnchor[1]);
+      _globalObjectDragged.parent().scrollLeft(-e.clientX + _globalObjectAnchor[0]);
+      _globalObjectDragged.css("cursor","move");
+    }    
+  });
+  $(document.body).mouseup(function(e) {
+    if(_globalObjectDragged){
+      _globalObjectDragged.css("cursor","default");
+      _globalObjectDragged = null;
+    }
+    
+  });
+
+});
 </script>
 </body>
 </html>
