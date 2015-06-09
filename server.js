@@ -50,8 +50,8 @@ io.on('connection', function (socket) {
       var export_data = {};
       export_data.id = onlinePlayersData[socket.id].id;
       export_data.level = onlinePlayersData[socket.id].level;
-      export_data.x = onlinePlayersData[socket.id].x;
-      export_data.y = onlinePlayersData[socket.id].y;
+      export_data.x = onlinePlayersData[socket.id].tx;
+      export_data.y = onlinePlayersData[socket.id].ty;
       export_data.healthMax = onlinePlayersData[socket.id].healthMax;
       export_data.healthCur = onlinePlayersData[socket.id].healthCur;
       export_data.speedCur = onlinePlayersData[socket.id].speedCur;
@@ -108,11 +108,11 @@ io.on('connection', function (socket) {
       var id = onlinePlayersData[socket.id].id;
       //pull disconnecting player back into database.
       console.log('disconnecting' + id);
+      for(var sId in onlinePlayersData)//tell all clients that this id is no more
+        io.to(sId).emit('player-disconnected', onlinePlayersData[socket.id].id);
       //no longer update player that disconnected.
       delete onlinePlayersData[socket.id];
     }
-    for(var sId in onlinePlayersData)//tell all clients that this id is no more
-      io.to(sId).emit('player-disconnected', onlinePlayersData[socket.id].id);
   });
 });
 function emitSpawning(foe){
@@ -130,7 +130,6 @@ function emitSpawning(foe){
     io.to(sId).emit('mob-spawned', export_mob);
   }
 }
-
 
 var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/update
   frameTime = new Date().getTime();
@@ -154,11 +153,15 @@ var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/up
 }, 1000/60);
 
 var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/update
-  //all client server comunication goes here
-  //send game-state to all clients
-  //emit appropriate map.worldPart
-  //emit mobs
-  //emit other player positions
+
+  var export_players = {};
+  for(var sId in onlinePlayersData){
+    if(!onlinePlayersData.hasOwnProperty(sId)) continue;
+    var id = onlinePlayersData[sId].id;
+    export_players[id] = {};
+    export_players[id].id = allPlayers[id].data.id;
+    export_players[id].healthCur = allPlayers[id].data.healthCur;
+  }
   var export_mobs = {};
   for(var i in mobzz){
     export_mobs[i] = {};
@@ -170,8 +173,7 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
     export_mobs[i].name = mobzz[i].name;
     export_mobs[i].id = mobzz[i].id;
   }
-  for(var sId in onlinePlayersData)
-    io.to(sId).emit('data-update', export_mobs);
+    io.to(sId).emit('data-update', {mobs: export_mobs, players: export_players});
 }, 1000/16);
 
 function Map(h, w){

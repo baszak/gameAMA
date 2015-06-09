@@ -15,9 +15,6 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
     y: ty,
     tx: tx,
     ty: ty,
-    ax: 0,
-    ay: 0,
-    moveBuffer: [],
     healthMax: healthMax,
     healthCur: healthCur,
     speed: speed,
@@ -31,37 +28,34 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
   }
   this.lastTime = frameTime;
   this.update = function(){
-    if (Math.abs(this.data.x-this.data.tx) < 0.05)
-      this.data.x = this.data.tx;
-    else
-      this.data.x += Math.sign(this.data.tx-this.data.x) * (frameTime - this.lastTime)/speed;
-    if (Math.abs(this.data.y-this.data.ty) < 0.05)
-      this.data.y=this.data.ty;
-    else
-    this.data.y += Math.sign(this.data.ty-this.data.y) * (frameTime - this.lastTime)/speed; 
+    this.data.x += Math.sign(this.data.tx-this.data.x) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.tx-this.data.x));
+    this.data.y += Math.sign(this.data.ty-this.data.y) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.ty-this.data.y));
 
 
-
-    if (Math.abs(this.data.ax) >= 1) {
-      this.data.moving = false;
-      this.data.x = this.data.tx;
-      this.data.ax = 0;
+    if(this.data.healthCur <=0){
+      this.die();
     }
-    
-    if (Math.abs(this.data.ay) >= 1) {
-      this.data.moving =  false;
-      this.data.y = this.data.ty;
-      this.data.ay = 0;
-    }
+
     this.lastTime = frameTime;
   }
   this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
-    ctx.drawImage(this.img, this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x + this.data.ax)*gh, (this.data.y + this.data.ay)*gh, gh, gh);
+    ctx.drawImage(this.img, this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
     // if(targetedMob==this){
     //   ctx.strokeStyle = "rgba(255, 0, 0, 1)";
     //   ctx.strokeRect((this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
     // }
+    if(this.data.isVisible){
+      ctx.fillStyle = '#FF371D';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      ctx.fillStyle = '#87E82B';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+    }
+  }
+  this.die = function(){
+    delete mobzz[this.data.id];
   }
 }
 

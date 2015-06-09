@@ -11,15 +11,15 @@ function Map(url, w, h){
   this.y = -45*gh;
   this.world = [[]];
 	this.update = function(player){
-    if ((player.x+player.ax)*gh + this.x > (game_size.w-17)*gh)
-      this.x = Math.max((game_size.w-17-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
-    if ((player.x+player.ax)*gh + this.x < 15*gh)
-      this.x = Math.min(-(player.x+player.ax-15)*gh,0);
-    if ((player.y+player.ay)*gh + this.y > (game_size.h-9)*gh) 
-      this.y = Math.max((game_size.h-9-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
-    if ((player.y+player.ay)*gh + this.y < 7*gh)
-      this.y = Math.min(-(player.y+player.ay-7)*gh,0);
-	}
+    if ((player.x+player.ax)*gh + this.x > (game_size.w-5)*gh)
+      this.x = Math.max((game_size.w-5-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
+    if ((player.x+player.ax)*gh + this.x < 4*gh)
+      this.x = Math.min(-(player.x+player.ax-4)*gh,0);
+    if ((player.y+player.ay)*gh + this.y > (game_size.h-5)*gh) 
+      this.y = Math.max((game_size.h-5-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
+    if ((player.y+player.ay)*gh + this.y < 4*gh)
+      this.y = Math.min(-(player.y+player.ay-4)*gh,0);
+  }
   this.drawBackground = function(ctx){
     ctx.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
   }
@@ -201,7 +201,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     this.data.limboState = true;
     this.data.isVisible = false;
   }
-	this.draw = function(ctx){  
+	this.draw = function(ctx){
       if(this.data.x < this.data.tx)
         this.data.direction = 3;
       else if(this.data.x > this.data.tx)
@@ -215,6 +215,15 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
       ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
     else
       ctx.drawImage(this.img_knight, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+
+    if(!this.data.isDead){
+      ctx.fillStyle = '#FF371D';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      ctx.fillStyle = '#87E82B';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+    }
 
 	}
   this.slot_1 = function(){

@@ -6,7 +6,7 @@ socket.on('players-move-update', function(data){
     if(otherPlayers[data.id]){
       otherPlayers[data.id].data.tx = data.tx;
       otherPlayers[data.id].data.ty = data.ty;
-      if(data.id == player_id){
+      if(data.id == player1.data.id){
         player1.data.tx = data.tx;
         player1.data.ty = data.ty;
       }
@@ -14,10 +14,18 @@ socket.on('players-move-update', function(data){
   }
 });
 socket.on('data-update', function (data){
-  for(var i in data){
-    if(!mobzz[data[i].id]) continue;
-      mobzz[data[i].id].data.tx = data[i].tx;
-      mobzz[data[i].id].data.ty = data[i].ty;
+  for(var i in data.mobs){
+    if(!mobzz[data.mobs[i].id]) continue;
+      mobzz[data.mobs[i].id].data.tx = data.mobs[i].tx;
+      mobzz[data.mobs[i].id].data.ty = data.mobs[i].ty;
+  }
+  for(var i in data.players){
+    if(player1.data.id == i){
+      player1.data.healthCur = data.players[i].healthCur;
+    }
+    if(!otherPlayers.hasOwnProperty(i))
+      continue;
+    otherPlayers[i].data.healthCur = data.players[i].healthCur;
   }
 })
 
@@ -29,7 +37,6 @@ socket.on('ping back', function(data){
   console.log(frameTime - data);
 });
 socket.on('player-connected', function (data){
-  console.log('player ' + data.id + ' connected.');
   otherPlayers[data.id] = new OtherPlayer(data.name, data.level, data.x, data.y, data.healthMax, data.healthCur, data.speedCur);
 });
 socket.on('player-login-success', function (data){
@@ -71,7 +78,6 @@ canvas.height = game_size.h*gh;
 // canvas.style.cursor = "none";
 var ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
-ctx.mozImageSmoothingEnabled = false;
 var lastKeyEvent;
 var frameTime = new Date().getTime();
 var lastFrame = new Date().getTime();
@@ -183,9 +189,12 @@ function draw(ctx){
 
 var drugX = 0, drugY = 1, fadeStage = 0, fadeTime = 2000;
 function update(){
-  // console.log(frameTime - ping);
   frameTime = new Date().getTime();
-  
+  if(frameTime - lastFrame > 5000){
+    console.log('window out of focus for ' + (frameTime-lastFrame) + '\n' + 'clearing mobzz');
+    // for(var i in mobzz) delete mobzz[i];
+  }
+
   if(player1.data.isDrugged){
     drugX = (drugX+1) % 360; drugY = Math.abs(Math.sin(drugX*Math.PI/180)+1);
     canvas.style.cssText="-webkit-filter:hue-rotate("+drugX+"deg) blur("+drugY+"px)";

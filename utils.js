@@ -151,6 +151,7 @@ function levelExpFormula(level){//
   }
 }*/
 function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_url, limboState){
+	console.log('constructing otherPlayer')
 	this.img = new Image();
 	this.img.src = img_url || 'img/knight_green.png';
 	this.data = {
@@ -161,10 +162,6 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		y: pos_y,
 		tx: pos_x,
 		ty: pos_y,
-		ax: 0,
-		ay: 0,
-		last_ax: 0,
-		last_ay: 0,
 		direction: 0,
 		animStart: frameTime,
 		moving: false,
@@ -172,21 +169,19 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		limboState: limboState || false,
 		healthMax: healthMax,
 		healthCur: healthCur,
-		moveBuffer: [],
+		isDead: false,
 		isVisible: true,
 		isTargeted: false
 	}
   this.lastTime = frameTime;
 	this.update = function(){
 
-    if (Math.abs(this.data.x-this.data.tx) < 0.05)
-      this.data.x = this.data.tx;
-    else
-    	this.data.x += Math.sign(this.data.tx-this.data.x) * (frameTime - this.lastTime)/speedCur;
-    if (Math.abs(this.data.y-this.data.ty) < 0.05)
-      this.data.y=this.data.ty;
-   	else
-    	this.data.y += Math.sign(this.data.ty-this.data.y) * (frameTime - this.lastTime)/speedCur;
+		this.data.x += Math.sign(this.data.tx-this.data.x) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.data.tx-this.data.x));
+    this.data.y += Math.sign(this.data.ty-this.data.y) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.data.ty-this.data.y));
+
+    if(this.data.healthCur <=0){
+      this.die();
+    }
 
     this.lastTime = frameTime;
 	}
@@ -200,10 +195,17 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
       else if(this.data.y > this.data.ty)
         this.data.direction = 1;
     
-    if(this.data.limboState){
-      // ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+    if(this.data.isVisible && this.data.id != player1.data.id){
+      ctx.drawImage(this.img, this.data.direction*16, 0, 16, 16, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
+      ctx.fillStyle = '#FF371D';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      ctx.fillStyle = '#87E82B';
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
     }
-    else
-      ctx.drawImage(this.img, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
 	}
+  this.die = function(){
+    // delete otherPlayers[this.data.id];
+  }
 }
