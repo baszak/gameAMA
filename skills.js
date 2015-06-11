@@ -1,3 +1,29 @@
+Skill.prototype = Object.create(Item.prototype);
+Skill.prototype.constructor = Skill;
+function Skill(id, name, stackable, quantity, type, target, range, effect, buff, debuff, duration){
+  Item.call(this, id, name, stackable, quantity, type);
+  this.type = type;
+  this.target = target;
+  this.range = range;
+  this.effect = effect;
+  this.buff = buff;
+  this.debuff = debuff;
+  this.duration = duration;
+}
+
+function getSkillType(){
+
+}
+function getSkillEffect(){
+  
+}
+function getBuffType(){
+
+}
+function getDebuffType(){
+
+}
+
 function playerIsReady(player, range, mana){
   if(!targetedMob) {
       statusMessage.showMessage("No target!", 1000);
@@ -22,7 +48,7 @@ function Projectile(url, target, caller, skill){
   this.state = 1;
   this.animationSpeed = 120;
   player1.data.exhausted = this.exhausted;
-  // this.damage = Math.random() * (player.intelligence + 85) + 15;
+  // this.damage = Math.random() * (player.data.intelligence + 85) + 15;
   this.angle = Math.atan2(target.y-this.y,target.x-this.x) + Math.PI/2;
 
 

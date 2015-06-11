@@ -1,24 +1,5 @@
 var ifac = new ItemFactory();
 
-var TypeEnum = {
-	WEAPON_1H: 0,
-	WEAPON_2H: 1,
-	ARMOR: 2,
-	LEGS: 3,
-	BOOTS: 4,
-	HELMET: 5,
-	BELT: 6,
-	NECKLACE: 7,
-	RING1: 8,
-	RING2: 9,
-	BACKPACK: 10,
-	GOLD: 11
-}
-if(Object.freeze){
-	Object.freeze(TypeEnum);
-}else console.warn("your browser doesn't support obj.freeze");
-
-
 function Item(id, name, stackable, quantity, type){
 	this.id = id;
 	this.name = name;
@@ -28,7 +9,7 @@ function Item(id, name, stackable, quantity, type){
 }
 Weapon.prototype = Object.create(Item.prototype);
 Weapon.prototype.constructor = Weapon;
-function Weapon(id, name, stackable, quantity, type, level, damageMin, damageMax, damageMod, speedMod, range){
+function Weapon(id, name, stackable, quantity, type, level, damageMin, damageMax, damageMod, speedMod, range, hitrateMod, armorPenetration){
 	Item.call(this, id, name, stackable, quantity, type);
 	this.level = level;
 	this.damageMin = damageMin;
@@ -36,10 +17,12 @@ function Weapon(id, name, stackable, quantity, type, level, damageMin, damageMax
 	this.damageMod = damageMod;
 	this.speedMod = speedMod;
 	this.range = range;
+	this.hitrateMod = hitrateMod;
+	this.armorPenetration = armorPenetration;
 }
 
 Armor.prototype = Object.create(Item.prototype);
-Armor.prototype.constructor = Weapon;
+Armor.prototype.constructor = Armor;
 function Armor(id, name, stackable, quantity, type, rating, dmgred){
 	Item.call(this, id, name, stackable, quantity, type);
 	this.rating = rating;
@@ -53,17 +36,84 @@ function ItemFactory(){
 		var damageMax = Math.floor(baseDmg + Math.random()*1.8 * level);
 		var damageMod = 0;
 		var speedMod = 0;
-		// var speedMod = Math.random() * 0.02;
 		var range = 1.45;
-		return (new Weapon(this.curId++, 'sword', false, 1, TypeEnum.WEAPON_1H, level, damageMin, damageMax, damageMod, speedMod, range));
+		var hitrateMod = 0;
+		var armorPenetration = 0;
+		var stackable = false;
+		var quantity = 1;
+		return (new Weapon(this.curId++, 'sword', stackable, quantity, itemType.WEAPON_1H, level, damageMin, damageMax, damageMod, speedMod, range, hitrateMod, armorPenetration));
 	}
 	this.createMoney = function(quantity){
-		return (new Item(this.curId++, 'gold', true, quantity, TypeEnum.GOLD));
+		var stackable = true;
+		return (new Item(this.curId++, 'gold', stackable, quantity, itemType.GOLD));
 	}
 	this.createArmor = function(level){
+		var stackable = false;
+		var quantity = 1;
 		var rating = level;
 		var dmgred = 0;
-		return (new Armor(this.curId++, 'armor', false, 1, TypeEnum.ARMOR, rating, dmgred));
+		return (new Armor(this.curId++, 'armor', stackable, quantity, itemType.ARMOR, rating, dmgred));
+	}
+	this.createSkill = function(type, target, range, effect, buff, debuff, duration){
+		switch(type){
+			case skillType.INSTANT:
+				switch(target){
+					case targetType.SELF:
+						switch(effect){
+							case skillEffect.HEAL:
+								
+								break;
+							case skillEffect.DAMAGE:
+
+								break;
+							case skillEffect.BUFF:
+
+								break;
+							case skillEffect.DEBUFF:
+
+								break;
+							case skillEffect.STUN:
+
+								break;
+							case skillEffect.SLOW:
+
+								break;
+							case skillEffect.LIFESTEAL:
+
+								break;
+					}
+						break;
+					case targetType.TARGET:
+
+						break;
+					case targetType.AREA:
+
+						break;
+				}
+
+
+				break;
+			case skillType.TIMED:
+				
+
+
+				break;
+			case skillType.PASSIVE:
+				
+
+
+				break;
+		}
+
+
+
+
+
+
+		var stackable = false;
+		var quantity = 1;
+		var range = user.data.equipment.primary.range;
+		return (new Skill(this.curId++, 'skill_test', stackable, quantity, type, targetType.SELF, range, skillEffect.BUFF, buffType.DMGBOOST));
 	}
 }
 

@@ -17,6 +17,13 @@ function sgn(x) {	return (x>0) - (x<0); }
 
 Array.prototype.min = function(f){ if(!this.length) return null; var min = this[0]; var minval = f(min); for(var i = this.length; i--;) {if (f(this[i]) < minval) {minval = f(this[i]); min = this[i]}} return min; }
 
+
+Object.defineProperty(Object.prototype, "min", { 
+    value: function(f) {
+        var min = null; var minval = null; for(var i in this) { if (minval ==null || f(this[i]) < minval) {minval = f(this[i]); min = this[i]}} return min;
+    },
+    enumerable : false
+});
 function fadeOut(object, property, startVal, endVal, time, callback){
 	var startTime = new Date().getTime();
 	if(object['currentAnimationId']) startVal = object[property];
@@ -150,8 +157,16 @@ function levelExpFormula(level){//
 	      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
   }
 }*/
+function drawHealthBar(obj){
+	ctx.drawImage(obj.img, obj.animationFrame*obj.data.spriteX, 0, obj.data.spriteX, obj.data.spriteY, (obj.data.x)*gh, (obj.data.y)*gh, gh, gh);
+  ctx.fillStyle = '#FF371D';
+  ctx.fillRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
+  ctx.fillStyle = '#87E82B';
+  ctx.fillRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24 * (obj.data.healthCur/obj.data.healthMax), 3);
+  ctx.strokeStyle = '#000';
+  ctx.strokeRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
+}
 function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_url, limboState){
-	console.log('constructing otherPlayer')
 	this.img = new Image();
 	this.img.src = img_url || 'img/knight_green.png';
 	this.data = {
@@ -166,7 +181,7 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
 		animStart: frameTime,
 		moving: false,
 		speedCur: speedCur,
-		limboState: limboState || false,
+		limboState: limboState,
 		healthMax: healthMax,
 		healthCur: healthCur,
 		isDead: false,
@@ -196,16 +211,10 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
         this.data.direction = 1;
     
     if(this.data.isVisible && this.data.id != player1.data.id){
-      ctx.drawImage(this.img, this.data.direction*16, 0, 16, 16, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
-      ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
-      ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      drawHealthBar(this);
     }
 	}
   this.die = function(){
-    // delete otherPlayers[this.data.id];
+    delete otherPlayers[this.data.id];
   }
 }

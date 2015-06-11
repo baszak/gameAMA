@@ -21,11 +21,12 @@
 	<script type="text/javascript" src="game.js"></script>
   <script type="text/javascript" src="gui.js"></script>
   <div class='window' id='win1'></div>
-<div class='window' id='win2'></div>
+	<div class='window' id='win2'></div>
 <!--<div style='position:absolute;left:0;top:0;width:100%;height:100%;background-color:#676a5a;opacity:0.4' id='modal'></div>-->
-<div class='window' id='win3'></div>
+	<div class='window' id='win3'></div>
+	<div class='window' id='win4'></div>
 
-<img src='img/item.gif' id='item'>
+<img src='img/item1.gif' id='item1'>
 <img src='img/item2.gif' id='item2'>
 <img src='img/item3.png' id='item3'>
 <img src='img/item4.gif' id='item4'>
@@ -43,21 +44,22 @@
       alert();
     }
   });
-  $("#win2").makeWindow({title: "Equipment"});
+  $("#win2").makeWindow({resizable: false, title: "Equipment", width: 280, height: 320});
   $("#win1").changeWindowProp({title: "Backpack"});
   $("#win1").changeWindowProp({content: "<div class='slot' size_x=4 size_y=5></div>"});
   
-  $("#win3").makeWindow({resizable: false, title: "Welcome!", width: 220, height: 120, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='button' value='LOG IN' style='margin:0px;'></center>"});
-  
+  $("#win3").makeWindow({resizable: false, title: "Welcome!", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='button' value='LOG IN' style='margin:8px;'><br><input type='button' value='CREATE NEW CHARACTER' onclick='popwindow4()' style='margin:0px;'></center>"});
+  function popwindow4(){
+	  $("#win4").makeWindow({resizable: false, title: "Create Character", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='password' placeholder='REPEAT PASSWORD'><input type='button' value='CREATE' id='new_char' style='margin:0px;'></center>"});
+	}
 
-$("#win2").changeWindowProp({content: $("#playereq")});
-$(".slot").makeContainter();
+	$("#win2").changeWindowProp({content: $("#playereq")});
+	$(".slot").makeContainter();
 
-  $("#item").makeItem(1,1,$($(".slot")[0]));
-  
+  $("#item1").makeItem(1,1,$($(".slot")[0]));
   $("#item2").makeItem(2,3,$($(".slot")[0]));
   $("#item3").makeItem(2,2,$($(".slot")[0]));
-$("#item4").makeItem(2,3,$($(".slot")[0]));
+	$("#item4").makeItem(2,3,$($(".slot")[0]));
 
 </script>
 </body>

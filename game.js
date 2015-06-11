@@ -1,6 +1,6 @@
 var player_id = prompt('id: ');
 
-var socket = io.connect('http://localhost:6767');
+var socket = io.connect('http://192.168.0.5:6767');
 socket.on('players-move-update', function(data){
   if(serverDataInitialized){
     if(otherPlayers[data.id]){
@@ -15,9 +15,12 @@ socket.on('players-move-update', function(data){
 });
 socket.on('data-update', function (data){
   for(var i in data.mobs){
-    if(!mobzz[data.mobs[i].id]) continue;
-      mobzz[data.mobs[i].id].data.tx = data.mobs[i].tx;
-      mobzz[data.mobs[i].id].data.ty = data.mobs[i].ty;
+    var id = data.mobs[i].id
+    if(!mobzz[id]) continue;
+      mobzz[id].data.tx = data.mobs[i].tx;
+      mobzz[id].data.ty = data.mobs[i].ty;
+      mobzz[id].data.healthMax = data.mobs[i].healthMax;
+      mobzz[id].data.healthCur = data.mobs[i].healthCur;
   }
   for(var i in data.players){
     if(player1.data.id == i){
@@ -54,18 +57,30 @@ socket.on('send-map-world', function (data){
 });
 socket.emit('player-login-attempt', player_id);
 socket.on('player-initiate-current-objects', function(data){
+  for(var i in data.mobs){
+    mobzz[data.mobs[i].id] = new Mob(data.mobs[i].id, data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
   for(var sId in data.players)
     otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
-  for(var i in data.mobs){
-    mobzz[data.mobs[i].id] = new Mob(data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
   }
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){
-  console.log(data.id)
-  mobzz[data.id] = new Mob(data.tx, data.ty, data.healthMax, data.healthCur, data.speed, data.name);
+  mobzz[data.id] = new Mob(data.id, data.tx, data.ty, data.healthMax, data.healthCur, data.speed, data.name);
 });
-
+socket.on('take-damage', function (data){
+  popups.push(new numberPopup(player1.data.x, player1.data.y, Math.round(data.dmg), 'damage', 1200));
+  console.log('damagepopup info')
+})
+socket.on('gained-exp', function (data){
+  if(player1.data.experience != data.totalExp)
+    player1.data.experience = data.totalExp;
+  else
+    player1.data.experience += data.gainedExp;
+});
+socket.on('mob-death', function (data){
+  if(mobzz[data])
+    mobzz[data].die();
+});
 var server_dataBuffer = [];
 var mobzz = {};
 var gh = 32;
@@ -114,7 +129,7 @@ var statusMessage = new StatusMessage(canvas);
 function autoTarget(){
   if(targetedMob) targetedMob.isTargeted = false;
   targetedMob = mobzz.min(function(e){
-    return Math.pow((e.x - player1.data.x), 2)+ Math.pow((e.y - player1.data.y), 2);
+    return Math.pow((e.data.x - player1.data.x), 2)+ Math.pow((e.data.y - player1.data.y), 2);
   });  
   targetedMob && (targetedMob.isTargeted = true);
 }
@@ -191,8 +206,7 @@ var drugX = 0, drugY = 1, fadeStage = 0, fadeTime = 2000;
 function update(){
   frameTime = new Date().getTime();
   if(frameTime - lastFrame > 5000){
-    console.log('window out of focus for ' + (frameTime-lastFrame) + '\n' + 'clearing mobzz');
-    // for(var i in mobzz) delete mobzz[i];
+    // ...
   }
 
   if(player1.data.isDrugged){
@@ -209,7 +223,7 @@ function update(){
   map.update(player1.data);
 
   experienceBar.update();
-  // for(var i=0; i < mobzz.length; i++) {mobzz[i].update(); }
+
   player1.update();
   for(var i in otherPlayers) otherPlayers[i].update();
   for(var i in mobzz) mobzz[i].update();
@@ -236,7 +250,7 @@ function checkInput(){
   if (key == "117"/* F6 */) {
     socket.emit('ping', frameTime);
   }
-  // if (key == "32") autoTarget();
+  if (key == "32") autoTarget();
   if (key == "49" || key == "97") player1.attack();
   player1["slot_"+ (key > 97 ? key - 97 : key -  49)] && player1["slot_"+ (key > 97 ? key - 97 : key -  49)]();
 

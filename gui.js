@@ -46,7 +46,7 @@
         width: options.width + 12
       });
       var header = $(document.createElement("div")).addClass("header").appendTo(div);
-      header.append('<div class="win_icon"></div>').append('<div class="header_text">'+(options.title||'')+'</div>').append('<div class="win_btns"></div>');
+      header.append('<div class="win_icon" style="background-image: url(img/'+options.icon+')"></div>').append('<div class="header_text">'+(options.title||'')+'</div>').append('<div class="win_btns"></div>');
       header.find('.win_btns').append('<div title="Close" class="button_close">x</div>');
       var border = $(document.createElement("div")).addClass("brd").appendTo(div);
       var content = $(document.createElement("div")).addClass("content").appendTo(div);
@@ -236,7 +236,7 @@
             left: ev.clientX + 10,
             top: ev.clientY + 10
           }).show();
-          _globalTooltip.html("<div style='color:gold; border-bottom: 1px solid #676a5a;font-weight:bold;'>Golden armour<span style='float:right'>legendarny</span></div><div style='color:#676a5a; border-bottom: 1px solid #676a5a;font-style:italic;font-size:9px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam maximus pulvinar iaculis. Curabitur eu scelerisque tellus. Duis scelerisque erat at erat cursus, in semper eros interdum. </div><table><tr><td align=left width=130>Pancerz</td><td align=right style='color:#00ff00;font-weight:bold;'>+14</td></tr><tr><td align=left width=130>Szybkość ataku</td><td align=right style='color:#ff0000;font-weight:bold;'>-2</td></tr></table>");
+          _globalTooltip.html("<div style='color:gold; border-bottom: 1px solid #676a5a;font-weight:bold;'>Golden armor<span style='float:right'>legendary</span></div><div style='color:#676a5a; border-bottom: 1px solid #676a5a;font-style:italic;font-size:9px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam maximus pulvinar iaculis. Curabitur eu scelerisque tellus. Duis sce suck my dick lerisque erat at erat cursus, in semper eros interdum. </div><table><tr><td align=left width=130>Pancerz</td><td align=right style='color:#00ff00;font-weight:bold;'>+14</td></tr><tr><td align=left width=130>Szybkość ataku</td><td align=right style='color:#ff0000;font-weight:bold;'>-2</td></tr></table>");
         },1000);
       });
       div.mouseout(function(){

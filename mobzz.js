@@ -1,16 +1,13 @@
 var tempImg = new Image();
 tempImg.src = 'img/bat_sprite.png';
 
-var UrlDict = {
-  'Bat':      'img/bat_sprite.png',
-  'BigBat':  'img/bat_sprite_big.png'
-}
-
-function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, spriteN){
+function Mob(id, tx, ty, healthMax, healthCur, speed, name){
   this.img = new Image();
-  this.img.src = UrlDict[name];
+  this.img.src = UrlDict.mob[name].src;
   this.data = {
+    id: id,
     name: name,
+    type: objType.MOB,
     x: tx,
     y: ty,
     tx: tx,
@@ -21,9 +18,9 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
     animStart: frameTime,
     moving: false,
     animationSpeed: 200,
-    spriteX: spriteX || 84,
-    spriteY: spriteY || 84,
-    spriteN: spriteN || 8,
+    spriteX: UrlDict.mob[name].spriteX || 84,
+    spriteY: UrlDict.mob[name].spriteY || 84,
+    spriteN: UrlDict.mob[name].spriteN || 8,
     isVisible: true
   }
   this.lastTime = frameTime;
@@ -31,30 +28,22 @@ function Mob(tx, ty, healthMax, healthCur, speed, name, spriteX, spriteY, sprite
     this.data.x += Math.sign(this.data.tx-this.data.x) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.tx-this.data.x));
     this.data.y += Math.sign(this.data.ty-this.data.y) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.ty-this.data.y));
 
-
-    if(this.data.healthCur <=0){
-      this.die();
-    }
-
     this.lastTime = frameTime;
   }
   this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
-    ctx.drawImage(this.img, this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
-    // if(targetedMob==this){
-    //   ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-    //   ctx.strokeRect((this.x + this.ax)*gh, (this.y + this.ay)*gh, gh, gh);
-    // }
+    if(this.isTargeted){
+      ctx.strokeStyle = "rgba(255, 0, 0, 1)";
+      ctx.strokeRect((this.data.x)*gh, (this.data.y)*gh, gh, gh);
+    }
     if(this.data.isVisible){
-      ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
-      ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      drawHealthBar(this);
     }
   }
   this.die = function(){
+    console.log('this.data.id: ' + this.data.id + 'targetedmobid: ' + targetedMob.data.id)
+    if(targetedMob.data.id == this.data.id)
+      targetedMob = null;
     delete mobzz[this.data.id];
   }
 }

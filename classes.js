@@ -108,13 +108,13 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
       {cooldown: 0, action: 0}
     ],
     equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
-                        secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
-                        body: {},
-                        legs: {},
-                        boots: {speedMod: 0},
-                        head: {},
-                        backpack: new Container
-                      }
+                  secondary: {}, // ¤=[]:::;;>
+                  body: {},
+                  legs: {},
+                  boots: {speedMod: 0},
+                  head: {},
+                  backpack: new Container(1000)
+                }
   }
 	this.update = function(){
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
@@ -155,8 +155,8 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     
 
     //handling regen. to be rewritten into ticks? maybe regen every sec to avoid floats
-    this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
-    this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
+    // this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
+    // this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
     // socket.emit('players-data-update', this.data);
   }
   this.move = function(dx, dy, dir){
@@ -167,10 +167,12 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data,targetedMob)<this.data.equipment.primary.range){
-        var damage = calcDamage(this.data, targetedMob)
-        missiles.push(new AttackAnimation(targetedMob, this.data, this.data.equipment.primary.type));
-        targetedMob.takeDamage(this.data, damage);
+      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
+        socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
+        console.log(targetedMob.data.id)
+        // var damage = calcDamage(this.data, targetedMob)
+        // missiles.push(new AttackAnimation(targetedMob, this.data, this.data.equipment.primary.type));
+        // targetedMob.takeDamage(this.data, damage);
         this.data.lastAttack = frameTime;
       }
     }
@@ -218,11 +220,11 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
 
     if(!this.data.isDead){
       ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
       ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 2);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 3);
       ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 2);
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
     }
 
 	}
@@ -562,31 +564,31 @@ function ActionBar(){
   }
 }
 
-function numberPopup(unitdata, content, type, duration){
+function numberPopup(unit_x, unit_y, content, type, duration){
     this.type = type;
-    this.x = unitdata.x;
-    this.y = unitdata.y;
+    this.x = unit_x;
+    this.y = unit_y;
     this.susp = (this.y)*gh - 3;
     this.content = content;
     this.messageTime = frameTime + duration;
-    this.susp += 1;
+    this.susp -= 2;
   this.draw = function(ctx){
     switch(type){
       case 'damage':
-        ctx.font = "12px Impact";
-        ctx.fillStyle = 'rgba(180, 0, 0, '+(this.messageTime-frameTime)/duration+')';
-        ctx.fillText(this.content, (this.x)*gh +10, this.susp);
+        ctx.font = "12px Tibia Font";
+        ctx.fillStyle = 'rgba(210, 0, 0, '+(this.messageTime-frameTime)/duration+')';
+        ctx.fillText(this.content, (this.x)*gh +14, this.susp);
         break;
       case 'heal':
         ctx.fillStyle = 'rgba(0, 210, 0, '+(this.messageTime-frameTime)/duration+')';
-        ctx.fillText(this.content, (this.x)*gh +10, this.susp)
+        ctx.fillText(this.content, (this.x)*gh +14, this.susp)
         break;
       case 'exp':
-        ctx.font = "12px Impact";
+        ctx.font = "12px Tibia Font";
         ctx.fillStyle = 'rgba(255, 255, 255, '+(this.messageTime-frameTime)/duration+')';
         // ctx.strokeStyle = 'rgba(55, 55, 55, 1)';
         // ctx.strokeText(this.content, (this.x)*gh +10, this.susp - 4);
-        ctx.fillText(this.content, (this.x)*gh +10, this.susp - 4);
+        ctx.fillText(this.content, (this.x)*gh +14, this.susp - 4);
         break;
     }
   }

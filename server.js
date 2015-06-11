@@ -28,8 +28,8 @@ io.on('connection', function (socket) {
   socket.on('player-login-attempt', function (new_player_id){
     console.log('connecting ' + new_player_id + ' ...');
     var playerFound = false;
-    for(i in allPlayers){
-        if(allPlayers[i].data.id == new_player_id){
+    for(i in allPlayers){ //players are stored by id
+        if(i == new_player_id){
           playerFound = true;
           break;
         }
@@ -44,6 +44,7 @@ io.on('connection', function (socket) {
       io.to(socket.id).emit('player-login-failure', {id: new_player_id, playerData: allPlayers[new_player_id]});
     }
       onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
+      allPlayers[new_player_id].socket = socket.id;
 
     //notify all players that a player connected
     for(var sId in onlinePlayersData){
@@ -91,8 +92,9 @@ io.on('connection', function (socket) {
   });
   socket.on('ping', function(data){
     io.to(socket.id).emit('ping back', data);
-    console.log(onlinePlayersData[socket.id].x, onlinePlayersData[socket.id].y);
-    console.log(mobzz.length)
+    for(var i=0; i<mobzz.length; i++){
+      console.log('id: '+ mobzz[i].id + ' i' + i)
+    }
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -114,6 +116,12 @@ io.on('connection', function (socket) {
       delete onlinePlayersData[socket.id];
     }
   });
+  socket.on('player-attack', function (data){
+    if(data.type == 1){
+      var id = onlinePlayersData[socket.id].id;
+      allPlayers[id].attack(data.id);
+    }
+  });
 });
 function emitSpawning(foe){
   for(var sId in onlinePlayersData){
@@ -126,11 +134,9 @@ function emitSpawning(foe){
     export_mob.speed = foe.speed;
     export_mob.name = foe.name;
     export_mob.id = foe.id;
-    console.log(export_mob.id)
     io.to(sId).emit('mob-spawned', export_mob);
   }
 }
-
 var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/update
   frameTime = new Date().getTime();
   //server side game physics are all calculated here
@@ -156,7 +162,7 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
 
   var export_players = {};
   for(var sId in onlinePlayersData){
-    if(!onlinePlayersData.hasOwnProperty(sId)) continue;
+    if(!onlinePlayersData[sId]) continue;
     var id = onlinePlayersData[sId].id;
     export_players[id] = {};
     export_players[id].id = allPlayers[id].data.id;
@@ -232,7 +238,7 @@ function MonsterSpawner(){//server only
   this.createSpawn(BigBat, 12, 20, 8);
   this.createSpawn(BigBat, 12, 9, 8);
   // this.createSpawn(Shroom, 33, 6, 8);
-}
+  }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
       foe_class: foe_class,
@@ -325,7 +331,7 @@ function Player(id, spawn_x, spawn_y){
       {cooldown: 0, action: 0},
       {cooldown: 0, action: 0}
     ],
-    equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
+    equipment: {  primary: {damageMin: 5, damageMax: 10, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
                         secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
@@ -365,7 +371,6 @@ function Player(id, spawn_x, spawn_y){
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
           // map.occupy(this.data.tx, this.data.ty);
-          console.log('player ' + this.data.id + ' moved to: ' + this.data.tx + ', ' + this.data.ty);
           for(var sId in onlinePlayersData)
             io.to(sId).emit('players-move-update', {tx: this.data.tx, ty: this.data.ty, id: this.data.id});
         }
@@ -377,8 +382,8 @@ function Player(id, spawn_x, spawn_y){
     
 
     //handling regen. to be rewritten into ticks? maybe regen every sec to avoid floats
-    this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
-    this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
+    // this.data.manaCur = Math.min(this.data.manaMax, this.data.manaCur + (frameTime - lastFrame)/1000*this.data.manaRegen);
+    // this.data.healthCur = Math.min(this.data.healthMax, this.data.healthCur + (frameTime - lastFrame)/1000*this.data.healthRegen);
 
     this.data.chunk[0] = Math.floor(this.data.tx/32);
     this.data.chunk[1] = Math.floor(this.data.ty/16);
@@ -387,12 +392,18 @@ function Player(id, spawn_x, spawn_y){
     if(map.isValid(this.data.tx + dx, this.data.ty + dy))
       this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
   }
-  this.attack = function(){ //rewrite to serverside
+  this.attack = function(target_id){
+    var id = null;
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data,targetedMob)<this.data.equipment.primary.range){
-        var damage = calcDamage(this.data, targetedMob)
-        missiles.push(new AttackAnimation(targetedMob, this.data, this.data.equipment.primary.type));
-        targetedMob.takeDamage(this.data, damage);
+      for(var i=0; i<mobzz.length; i++){
+        if(mobzz[i].id == target_id){
+          id = i;
+          break;
+        }
+      }
+      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && mobzz[id] && dist(this.data, mobzz[id])<this.data.equipment.primary.range){
+        var damage = calcDamage(this.data, mobzz[id])
+        mobzz[id].takeDamage(this.data.id, damage);
         this.data.lastAttack = frameTime;
       }
     }
@@ -405,12 +416,15 @@ function Player(id, spawn_x, spawn_y){
     this.data.healthCur -= dmg;
     this.data.attacker = attacker.id;
 
+    io.to(this.socket).emit('take-damage', {dmg: dmg})
+
     this.data.damageInfo[this.data.attacker] = this.data.damageInfo[this.data.attacker] || 0;
     this.data.damageInfo[this.data.attacker] += dmg;
     this.data.damageInfo.totalDamage += dmg;
 
     if(this.data.healthCur <= 0 && !this.data.isDead){
       this.die();
+      attacker.targetId = null;
     }
   }
   this.die = function(){
@@ -496,7 +510,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   this.chunk[1] = Math.floor(this.ty/game_size.h),
   this.mobile = mobile;
   this.moveQ = new MovementQueue();
-  this.targetId;
+  this.targetId = null;
   this.aggro = false;
   this.aggroRange = 4;
   this.leeshTimer = frameTime;
@@ -539,7 +553,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     this.attack();
     this.chunk[0] = Math.floor(this.tx/32);
     this.chunk[1] = Math.floor(this.ty/16);
-    return this;//why?
+    return this;
   }
   
   this.rlyMove = function(tx,ty){
@@ -554,6 +568,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     
     if(this.aggro){
         if(!this.moving){
+          if(!this.targetId) return;
           this.moveQ.findPath(this.tx, this.ty, allPlayers[this.targetId].data.tx, allPlayers[this.targetId].data.ty);
           if(!this.moveQ.getLength())
             this.aggro = false;
@@ -589,7 +604,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
 
     }
     else if(this.type == 1){ //aggressive
-      if(this.targetId){//check if target is lost
+      if(this.targetId){//check if target isn't lost
         if(!allPlayers[this.targetId].data.isVisible){//that only means player is dead. for now.
           this.targetId = null;
           this.aggro = false;
@@ -600,8 +615,8 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
         }
       }
       else{//no target -> look for target
-        for(var i in onlinePlayersData){
-          var id = onlinePlayersData[i].id;
+        for(var sId in onlinePlayersData){
+          var id = onlinePlayersData[sId].id;
           if(!allPlayers[id]) continue;
           if(dist(this, allPlayers[id].data) < this.aggroRange && allPlayers[id].data.isVisible){
             this.aggro = true;
@@ -614,19 +629,21 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     }
   }
   this.attack = function(){
+    if(!allPlayers[this.targetId]) return;
     if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(allPlayers[this.targetId].data, this)<1.45){
       var damage = Math.round((Math.random()*100) % (this.damageMax-this.damageMin) + this.damageMin);
       allPlayers[this.targetId].takeDamage(this, damage);
-      this.onHit();
+      // this.onHitEmit(damage);
       this.lastAttack = frameTime;
     }
   }
-  this.onHit = function(){
-    //only triggered in this.attack() above
+  this.onHitEmit = function(damage){
+
   }
   this.sound = function(){
 
   }
+   // mobzz[id].takeDamage(this.data.id, damage);
   this.takeDamage = function(attackerId, damage, debuff){
     var damageTaken = Math.min(damage, this.healthCur);
     
@@ -634,7 +651,7 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
     this.leeshTimer = new Date().getTime();
 
     this.healthCur -= damageTaken;
-    this.damageInfo[attackerId] = this.damageInfo[attackerId.id] || 0;
+    this.damageInfo[attackerId] = this.damageInfo[attackerId] || 0;
     this.damageInfo[attackerId] += damageTaken;
     this.damageInfo.totalDamage += damageTaken;
 
@@ -643,7 +660,10 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   }
   this.die = function(killerId){
     for(var i=0; i<mobzz.length; i++){
-      if(mobzz[i] == this){
+      if(mobzz[i].id == this.id){
+        for(sId in onlinePlayersData){
+          io.to(sId).emit('mob-death', this.id);
+        }
         mobzz.splice(i,1);
         // map.free(this.tx, this.ty);
         this.dropExperience(killerId);
@@ -654,11 +674,13 @@ function Foe(name, url, id, spawn_x, spawn_y, mobile, spriteX, spriteY, spriteN)
   }
   this.dropExperience = function(killerId){
     for(var id in this.damageInfo){
-          var exp = 0.5 * this.exp * (this.damageInfo[id]/this.damageInfo.totalDamage) + (allPlayers[id].data.id==killerId?0.5*this.exp:0);
-          if(!exp) continue;
-          exp = Math.floor(exp);
-          allPlayers[id].data.experience += exp;
-        }
+      if(id == 'totalDamage') continue;
+      var exp = 0.5 * this.exp * (this.damageInfo[id]/this.damageInfo.totalDamage) + (allPlayers[id].data.id==killerId?0.5*this.exp:0);
+      if(!exp) continue;
+      exp = Math.floor(exp);
+      allPlayers[id].data.experience += exp;
+      io.to(allPlayers[id].socket).emit('gained-exp', {totalExp: allPlayers[id].data.experience, gainedExp: exp});
+    }
   }
   this.dropLoot = function(){
     // entities.newEntity(this.id, this.tx, this.ty, this.loot);

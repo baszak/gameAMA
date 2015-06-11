@@ -103,7 +103,6 @@ input:focus {
   top: 6px;
   width: 20px;
   height: 20px;
-  background-image: url(img/bp.gif)
 }
 
 .window .header_text {
@@ -160,7 +159,6 @@ input:focus {
   right: 6px; 
   bottom: 6px;
 }
-
 .slot {
   background-image: url(img/slot.png);
   position: absolute;
