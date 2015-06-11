@@ -12,10 +12,55 @@ function Skill(id, name, stackable, quantity, type, target, range, effect, buff,
 }
 
 function getSkillType(){
-
+  switch(type){
+      case skillType.INSTANT:
+      
+        break;
+      case skillType.TIMED:
+        
+        break;
+      case skillType.PASSIVE:
+        
+        break;
+    }
 }
-function getSkillEffect(){
-  
+function getSkillEffect(effect){
+  switch(effect){
+              case skillEffect.HEAL:
+                
+                break;
+              case skillEffect.DAMAGE:
+
+                break;
+              case skillEffect.BUFF:
+
+                break;
+              case skillEffect.DEBUFF:
+
+                break;
+              case skillEffect.STUN:
+
+                break;
+              case skillEffect.SLOW:
+
+                break;
+              case skillEffect.LIFESTEAL:
+
+                break;
+          }
+}
+function getTargetType(target){
+  switch(target){
+          case targetType.SELF:
+            
+            break;
+          case targetType.TARGET:
+
+            break;
+          case targetType.AREA:
+
+            break;
+        }
 }
 function getBuffType(){
 

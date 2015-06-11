@@ -55,61 +55,7 @@ function ItemFactory(){
 		return (new Armor(this.curId++, 'armor', stackable, quantity, itemType.ARMOR, rating, dmgred));
 	}
 	this.createSkill = function(type, target, range, effect, buff, debuff, duration){
-		switch(type){
-			case skillType.INSTANT:
-				switch(target){
-					case targetType.SELF:
-						switch(effect){
-							case skillEffect.HEAL:
-								
-								break;
-							case skillEffect.DAMAGE:
-
-								break;
-							case skillEffect.BUFF:
-
-								break;
-							case skillEffect.DEBUFF:
-
-								break;
-							case skillEffect.STUN:
-
-								break;
-							case skillEffect.SLOW:
-
-								break;
-							case skillEffect.LIFESTEAL:
-
-								break;
-					}
-						break;
-					case targetType.TARGET:
-
-						break;
-					case targetType.AREA:
-
-						break;
-				}
-
-
-				break;
-			case skillType.TIMED:
-				
-
-
-				break;
-			case skillType.PASSIVE:
-				
-
-
-				break;
-		}
-
-
-
-
-
-
+		getSkillType(type, target, effect, buff, debuff);
 		var stackable = false;
 		var quantity = 1;
 		var range = user.data.equipment.primary.range;
