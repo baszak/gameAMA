@@ -37,10 +37,9 @@
   };
   
   $.fn.makeWindow = function(options) {
-    options = $.extend(windowDefaults, options);
+    var options = $.extend({}, windowDefaults, options);
     this.each(function() {
       var div = $( this );
-      
       div.css({
         height: options.height + 37,
         width: options.width + 12
