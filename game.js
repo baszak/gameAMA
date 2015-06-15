@@ -1,6 +1,6 @@
 var player_id = prompt('id: ');
 
-var socket = io.connect('http://192.168.0.5:6767');
+var socket = io.connect('http://localhost:6767');
 socket.on('players-move-update', function(data){
   if(serverDataInitialized){
     if(otherPlayers[data.id]){
@@ -40,7 +40,8 @@ socket.on('ping back', function(data){
   console.log(frameTime - data);
 });
 socket.on('player-connected', function (data){
-  otherPlayers[data.id] = new OtherPlayer(data.name, data.level, data.x, data.y, data.healthMax, data.healthCur, data.speedCur);
+  otherPlayers[data.id] = new OtherPlayer(data.id, data.name, data.level, data.x, data.y, data.healthMax, data.healthCur, data.speedCur, 'green_player');
+  missiles.push(new ShortAnimation(data.x, data.y, 'spawn_puff'));
 });
 socket.on('player-login-success', function (data){
   statusMessage.showMessage('login succesful ' + data.id, 3000);
@@ -60,26 +61,29 @@ socket.on('player-initiate-current-objects', function(data){
   for(var i in data.mobs){
     mobzz[data.mobs[i].id] = new Mob(data.mobs[i].id, data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
   for(var sId in data.players)
-    otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur);
+    otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur, 'green_player');
   }
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){
   mobzz[data.id] = new Mob(data.id, data.tx, data.ty, data.healthMax, data.healthCur, data.speed, data.name);
+  missiles.push(new ShortAnimation(data.tx, data.ty, 'spawn_puff'));
 });
-socket.on('take-damage', function (data){
-  popups.push(new numberPopup(player1.data.x, player1.data.y, Math.round(data.dmg), 'damage', 1200));
-  console.log('damagepopup info')
-})
+socket.on('player-take-damage', function (data){
+  player1.data.id==data.id ? player1.takeDamage(data) : (otherPlayers[data.id] && otherPlayers[data.id].takeDamage(data));
+});
+socket.on('mob-take-damage', function (data){
+  mobzz[data.id] && mobzz[data.id].takeDamage(data.dmg);
+});
 socket.on('gained-exp', function (data){
-  if(player1.data.experience != data.totalExp)
-    player1.data.experience = data.totalExp;
-  else
-    player1.data.experience += data.gainedExp;
+  player1.data.experience != data.totalExp?(player1.data.experience = data.totalExp):player1.data.experience += data.gainedExp;
 });
 socket.on('mob-death', function (data){
   if(mobzz[data])
     mobzz[data].die();
+});
+socket.on('player-death', function (data){
+  alert("You're dead son. Better luck next time.");
 });
 var server_dataBuffer = [];
 var mobzz = {};
@@ -166,11 +170,11 @@ function draw(ctx){
 
   map.drawBackground(ctx);
   map.drawForeground(ctx);
+  for(var i=0; i<entities.allEntities.length; i++) entities.allEntities[i].draw(ctx);
   ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.fillRect(Math.floor(mousepos.x/gh)*gh,Math.floor(mousepos.y/gh)*gh,gh,gh);
   ctx.translate(map.x, map.y);
 
-  for(var i = 0; i< entities.allEntities.length; i++) entities.allEntities[i].draw();
 
 
   player1.draw(ctx);
@@ -221,6 +225,7 @@ function update(){
   checkInput();
   
   map.update(player1.data);
+  entities.update();
 
   experienceBar.update();
 

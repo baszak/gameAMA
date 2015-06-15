@@ -7,6 +7,21 @@ function Item(id, name, stackable, quantity, type){
 	this.stackable = stackable;
 	this.quantity = quantity;
 }
+Skill.prototype = Object.create(Item.prototype);
+Skill.prototype.constructor = Skill;
+function Skill(id, name, stackable, quantity, type, abilities){
+  Item.call(this, id, name, stackable, quantity, type);
+  this.abilities = abilities;
+  // this.cooldown = cd;
+  // this.lastUsed;
+  this.activate = function() {
+
+  };
+  this.update = function() {
+
+  };
+
+}
 Weapon.prototype = Object.create(Item.prototype);
 Weapon.prototype.constructor = Weapon;
 function Weapon(id, name, stackable, quantity, type, level, damageMin, damageMax, damageMod, speedMod, range, hitrateMod, armorPenetration){
@@ -54,14 +69,22 @@ function ItemFactory(){
 		var dmgred = 0;
 		return (new Armor(this.curId++, 'armor', stackable, quantity, itemType.ARMOR, rating, dmgred));
 	}
-	this.createSkill = function(type, target, range, effect, buff, debuff, duration){
-		getSkillType(type, target, effect, buff, debuff);
+	this.createSkill = function(array, cooldown){
+		var abilities = array;
+		for(var i=0; i<abilities.length; i++){
+			var a = abilities[i];
+			if(a.value && a.duration) continue; //that is when value and dur are specified
+			a.duration = Math.random()>0.2?a.duration=0:a.duration=Math.round((level/8)+Math.random()*Math.random()*Math.random()*10);
+		}
+			
+
+
 		var stackable = false;
 		var quantity = 1;
-		var range = user.data.equipment.primary.range;
-		return (new Skill(this.curId++, 'skill_test', stackable, quantity, type, targetType.SELF, range, skillEffect.BUFF, buffType.DMGBOOST));
+		return (new Skill(this.curId++, 'skill_test', stackable, quantity, itemType.SKILL, abilities));
 	}
 }
+var test = ifac.createSkill(10, [{type: skillType.INSTANT, target: skillTarget.SELF, effect: skillEffect.HEAL, value: 35, duration: 0}]);
 
 function Container(max_size, parent_container){
 	this.name = 'container';

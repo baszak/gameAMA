@@ -45,7 +45,7 @@ function fadeOut(object, property, startVal, endVal, time, callback){
 }
 function isPointWithin(a, p) { return a.x <= p.x && a.x + a.w > p.x && a.y <= p.y && a.y + a.h > p.y; }
 function dist(a, b) {
-	return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+	return Math.sqrt((a.tx-b.tx)*(a.tx-b.tx)+(a.ty-b.ty)*(a.ty-b.ty));
 }
 CanvasRenderingContext2D.prototype.drawRotatedImage = function(image, x, y, w, h, angle) {
 	this.save(); 
@@ -109,7 +109,7 @@ function calcDamage(attacker, enemy){
 	return (damage>=0)?Math.round(damage):0;//keep it in integers
 }
 function updateStats(player){
-	player.speedCur = player.speedCur>=80?Math.round(player.speedBase * (1-player.equipment.boots.speedMod)):80;//speed cap at 80.less is faster
+	player.speedCur = player.speedCur>=80?Math.floor(player.speedBase * (1-player.equipment.boots.speedMod)):80;//speed cap at 80.less is faster
 }
 function levelUp(player){
 	player.level++;
@@ -137,28 +137,7 @@ function levelUpFormula(level){//xp needed for the next lvl
 function levelExpFormula(level){//
   return ((50/3)*(level*level*level-6*level*level+17*level-12));
 }
-/*function drawPlayers(ctx){
-	if(!player1.ready) return;
-	for(var sId in server_dataBuffer[0]){
-	      // if(server_onlinePlayersData[sId].id == player1.data.id)//skip drawing player locally
-	      //   continue;
-	      var that = server_dataBuffer[0][sId];//current iteration player.data
-
-
-	      if(that.x < that.tx)
-	        that.direction = 3;
-	      else if(that.x > that.tx)
-	        that.direction = 2;
-	      else if(that.y < that.ty)
-	        that.direction = 0;
-	      else if(that.y > that.ty)
-	        that.direction = 1;
-
-	      ctx.drawImage(player1.img_knight_green, that.direction*16, 0, 16, 16, (that.x + that.ax)*gh, (that.y + that.ay)*gh, gh, gh);
-  }
-}*/
 function drawHealthBar(obj){
-	ctx.drawImage(obj.img, obj.animationFrame*obj.data.spriteX, 0, obj.data.spriteX, obj.data.spriteY, (obj.data.x)*gh, (obj.data.y)*gh, gh, gh);
   ctx.fillStyle = '#FF371D';
   ctx.fillRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
   ctx.fillStyle = '#87E82B';
@@ -166,9 +145,39 @@ function drawHealthBar(obj){
   ctx.strokeStyle = '#000';
   ctx.strokeRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
 }
-function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_url, limboState){
-	this.img = new Image();
-	this.img.src = img_url || 'img/knight_green.png';
+function calcLineOfSight (start_x, start_y, end_x, end_y) {
+  var coordinatesArray = [];
+  var x1 = start_x;
+  var y1 = start_y;
+  var x2 = end_x;
+  var y2 = end_y;
+  var dx = Math.abs(x2 - x1);
+  var dy = Math.abs(y2 - y1);
+  var sx = (x1 < x2) ? 1 : -1;
+  var sy = (y1 < y2) ? 1 : -1;
+  var err = dx - dy;
+  coordinatesArray.push([y1, x1]);
+  // Main loop
+  while (!((x1 == x2) && (y1 == y2))) {
+    var e2 = err << 1;
+    if (e2 > -dy) {
+      err -= dy;
+      x1 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y1 += sy;
+    }
+    coordinatesArray.push([y1, x1]);
+  }
+  for(var i=0; i<coordinatesArray.length; i++){
+  	var y = coordinatesArray[i][0];
+  	var x = coordinatesArray[i][1];
+  	if(map.world[x][y] >= 1) return {isClear: false, obstacle: {x: x, y:y}};
+  }
+  return {isClear: true};
+}
+function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_name, limboState){
 	this.data = {
 		id: id,
 		name: name,
@@ -211,6 +220,7 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
         this.data.direction = 1;
     
     if(this.data.isVisible && this.data.id != player1.data.id){
+    	ctx.drawImage(allImages[img_name], (this.data.x)*gh, (this.data.y)*gh, gh, gh);
       drawHealthBar(this);
     }
 	}

@@ -1,72 +1,8 @@
 Skill.prototype = Object.create(Item.prototype);
 Skill.prototype.constructor = Skill;
-function Skill(id, name, stackable, quantity, type, target, range, effect, buff, debuff, duration){
+function Skill(id, name, stackable, quantity, type, abilities){
   Item.call(this, id, name, stackable, quantity, type);
-  this.type = type;
-  this.target = target;
-  this.range = range;
-  this.effect = effect;
-  this.buff = buff;
-  this.debuff = debuff;
-  this.duration = duration;
-}
-
-function getSkillType(){
-  switch(type){
-      case skillType.INSTANT:
-      
-        break;
-      case skillType.TIMED:
-        
-        break;
-      case skillType.PASSIVE:
-        
-        break;
-    }
-}
-function getSkillEffect(effect){
-  switch(effect){
-              case skillEffect.HEAL:
-                
-                break;
-              case skillEffect.DAMAGE:
-
-                break;
-              case skillEffect.BUFF:
-
-                break;
-              case skillEffect.DEBUFF:
-
-                break;
-              case skillEffect.STUN:
-
-                break;
-              case skillEffect.SLOW:
-
-                break;
-              case skillEffect.LIFESTEAL:
-
-                break;
-          }
-}
-function getTargetType(target){
-  switch(target){
-          case targetType.SELF:
-            
-            break;
-          case targetType.TARGET:
-
-            break;
-          case targetType.AREA:
-
-            break;
-        }
-}
-function getBuffType(){
-
-}
-function getDebuffType(){
-
+  this.abilities = abilities;
 }
 
 function playerIsReady(player, range, mana){
@@ -81,47 +17,50 @@ function playerIsReady(player, range, mana){
     } else
       return 1;
 }
-function Projectile(url, target, caller, skill){
-  this.img = new Image();
-  this.img.src = url || "img/projectile_new.png"
+function Projectile(caller_x, caller_y, target_x, target_y, type1, type2){
   this.explo_img = new Image();
   this.explo_img.src = "img/explo.png"
-  this.x = caller.x || player1.data.x;
-  this.y = caller.y || player1.data.y;
+  this.x = caller_x;
+  this.y = caller_y;
+  this.tx = target_x;
+  this.ty = target_y;
+  var los = calcLineOfSight(this.x, this.y, this.tx, this.ty);
+  if(!los.isClear){
+    this.tx = los.obstacle.x;
+    this.ty = los.obstacle.y;
+  }
   this.animStart = frameTime;
-  this.speed = 30*dist(player1.data, target);
+  this.speed = 30*dist({tx: this.x, ty: this.y}, {tx: this.tx, ty: this.ty});
   this.state = 1;
   this.animationSpeed = 120;
-  player1.data.exhausted = this.exhausted;
-  // this.damage = Math.random() * (player.data.intelligence + 85) + 15;
-  this.angle = Math.atan2(target.y-this.y,target.x-this.x) + Math.PI/2;
+  this.angle = Math.atan2(this.ty-this.y,this.tx-this.x) + Math.PI/2;
 
 
   this.update = function(){
     if(this.state){
-      this.ax = (target.x - this.x) * (frameTime - this.animStart) / this.speed;
-      this.ay = (target.y - this.y) * (frameTime - this.animStart) / this.speed;
+      this.ax = (this.tx - this.x) * (frameTime - this.animStart) / this.speed;
+      this.ay = (this.ty - this.y) * (frameTime - this.animStart) / this.speed;
       if(frameTime - this.animStart >= this.speed){
-        this.hit();
+        // this.hit();
         this.state = 0;
         this.animStart = frameTime;
-        this.x = target.x;
-        this.y = target.y;
+        this.x = this.tx;
+        this.y = this.ty;
       }
-    } 
+    }
     else{
       this.animationFrame = Math.floor((frameTime - this.animStart) / this.animationSpeed);
-      if(this.animationFrame > 6) delete missiles[this.id];
+      if(this.animationFrame > allImages[type2].spriteN) delete missiles[this.id];
     }
   }
   this.draw = function(ctx){
     if(this.state)
-      ctx.drawRotatedImage(this.img, (this.x+this.ax)*gh+gh/2, (this.y+this.ay)*gh+gh/2, gh, gh, this.angle);
+      ctx.drawRotatedImage(allImages[type1], (this.x+this.ax)*gh+gh/2, (this.y+this.ay)*gh+gh/2, gh, gh, this.angle);
     else
-      ctx.drawImage(this.explo_img, this.animationFrame*84, 0, 84, 84, this.x * gh, this.y*gh, gh, gh);
+      ctx.drawImage(allImages[type2], this.animationFrame*allImages[type2].spriteX, 0, allImages[type2].spriteX, allImages[type2].spriteY, this.x * gh, this.y*gh, gh, gh);
   }
   this.hit = function(){
-    target.takeDamage(player1.data, this.damage);
+    // target.takeDamage(player1.data, this.damage);
   }
 }
 function Fireball(target, skill){
@@ -201,31 +140,19 @@ function Rocket(url, target, caller, skill){
     }
   }
 }
-function Explosion(){
-  this.explo_img = new Image();
-  this.explo_img.src = "img/explo.png"
-  this.x = player1.data.tx;
-  this.y = player1.data.ty;
+function ShortAnimation(x, y, name){
+  this.x = x;
+  this.y = y;
   this.animStart = frameTime;
-  this.animationSpeed = 120;
-  player1.data.exhausted = frameTime + 1500;
+  this.animationSpeed = 90;
   this.update = function(){
     this.animationFrame = Math.floor((frameTime - this.animStart) / this.animationSpeed);
-    if(this.animationFrame > 6)delete missiles[this.id];
+    if(this.animationFrame > allImages[name].spriteN) delete missiles[this.id];
   }
   this.draw = function(ctx){
-    for(x = this.x - 1; x < this.x + 2; x++){
-      for( y = this.y - 1; y < this.y + 2; y++){
-        if(x == this.x && y == this.y) continue;
-        ctx.drawImage(this.explo_img, this.animationFrame*84, 0, 84, 84, x * gh, y*gh, gh, gh);
-      }
-    }
-  }
-  this.hit = function(){
-
+    ctx.drawImage(allImages[name], this.animationFrame*allImages[name].spriteX, 0, allImages[name].spriteX, allImages[name].spriteY, this.x * gh, this.y*gh, gh, gh);
   }
 }
-// **************** ATTRIBUTE SPENDING SHIT ***********************
 
 
 
