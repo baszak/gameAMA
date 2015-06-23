@@ -12,6 +12,7 @@
 	<script src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
 	<script type="text/javascript" src="jquery-2.1.1.min.js"></script>
 	<script type="text/javascript" src="enums.js"></script>
+	<script type="text/javascript" src="imageRepo.js"></script>
 	<script type="text/javascript" src="utils.js"></script>
 	<script type="text/javascript" src="items.js"></script>
 	<script type="text/javascript" src="resources.js"></script>
@@ -23,13 +24,12 @@
   <script type="text/javascript" src="gui.js"></script>
   <div class='window' id='win1'></div>
 	<div class='window' id='win2'></div>
-	<div style='position:absolute;left:0;top:0;width:100%;height:100%;background-color:#676a5a;opacity:0.4' id='modal'></div>
 	<div class='window' id='win3'></div>
 	<div class='window' id='win4'></div>
 	<div class='window' id='win5'></div>
 
 <img src='img/item1.gif' id='item1'>
-<img src='img/item2.gif' id='item2'>
+<img src='img/items/sword_2x3_big.png' id='item2'>
 <img src='img/item3.png' id='item3'>
 <img src='img/item4.gif' id='item4'>
 <div id='playereq'>
@@ -59,7 +59,7 @@
 	$(".slot").makeContainter();
 
   $("#item1").makeItem(1,1,$($(".slot")[0]));
-  $("#item2").makeItem(1,1,$($(".slot")[0]));
+  $("#item2").makeItem(2,3,$($(".slot")[0]));
   $("#item3").makeItem(1,1,$($(".slot")[0]));
 	$("#item4").makeItem(1,1,$($(".slot")[0]));
 

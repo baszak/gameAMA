@@ -50,7 +50,8 @@ function dist(a, b) {
 CanvasRenderingContext2D.prototype.drawRotatedImage = function(image, x, y, w, h, angle) {
 	this.save(); 
 	this.translate(x, y);
-	this.rotate(angle);
+	this.init_angle = image.init_angle || 0;
+	this.rotate(angle + this.init_angle);
 	this.drawImage(image, -(image.width/2), -(image.height/2), w, h);
 	this.restore();
 }

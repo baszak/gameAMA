@@ -58,11 +58,10 @@ socket.on('send-map-world', function (data){
 });
 socket.emit('player-login-attempt', player_id);
 socket.on('player-initiate-current-objects', function(data){
-  for(var i in data.mobs){
+  for(var i in data.mobs)
     mobzz[data.mobs[i].id] = new Mob(data.mobs[i].id, data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
   for(var sId in data.players)
     otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur, 'green_player');
-  }
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){

@@ -53,12 +53,7 @@ function Map(url, w, h){
 }
 
 function Player(url, id, spawn_x, spawn_y, data_from_server){
-    this.img_knight = new Image(),
-    this.img_knight.src = url || "img/knight.png",
-    this.img_knight_green = new Image(),
-    this.img_knight_green.src = url || "img/knight_green.png",
-    this.img_limbo = new Image(),
-    this.img_limbo.src = url || "img/knight_limbo.png",
+  var skillUser = this;
   this.data = {
     id: id || 1,
     name : "Playerino",
@@ -81,14 +76,33 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     healthCur: 100,
     manaMax: 900,
     manaCur: 900,
-    healthRegen: 0,
+    healthRegenBase: 100,
+    healthRegen: 100,
     manaRegen: 300,
     mmr: 1400,
     speedBase: 400,
     speedCur: 400,
+    baseAttackCooldown: 800,
+    /* percentage */
     critChance: 0.5,
     critDamage: 1,
-    //other shit
+    lifeSteal: 0,
+    dmgMod: 1,
+    atkSpeedBoost: 1,
+    evasion: 0,
+    dmgReflect: 0,
+    blockChance: 0,
+    magicImmunity: 0,
+    physicalImmunity: 0,
+    /* bools */
+    silenced: false,
+    stunned: false,
+    disarmed: false,
+    stealthed: false,
+    bleeding: false,
+    onFire: false,
+    poisoned: false,
+        //other shit
     moveValid: 1,
     isVisible: true,
     limboState: false,
@@ -97,16 +111,11 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     moveQ: new MovementQueue(),
     animStart: frameTime,
     lastAttack: frameTime,
-    attackCooldown: 800,
     exhausted: 0,
     buffTimer: 0,
     damageInfo: {totalDamage: 0},
-    skills: [
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0}
-    ],
+    skills: [],
+
     equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "bow", range: 8*1.45},// o()XXXX[{::::::::::::::>
                   secondary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                   body: {},
@@ -117,6 +126,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
                 }
   }
 	this.update = function(){
+    for(var i=0; i<this.data.skills.length; i++){
+      if(this.data.skills[i])
+        this.data.skills[i].update();
+    }
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
     this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
     
@@ -157,12 +170,12 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
+      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
         socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow', 'arrow_hit'))
-          default:
+            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'arrow_hit'))
+          case 'sword':
             // missiles.push(new AttackAnimation(targetedMob.data, this.data, this.data.equipment.primary.type));
         }
 
@@ -186,18 +199,16 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
 	this.draw = function(ctx){
       if(this.data.x < this.data.tx)
-        this.data.direction = 3;
-      else if(this.data.x > this.data.tx)
         this.data.direction = 2;
+      else if(this.data.x > this.data.tx)
+        this.data.direction = 1;
       else if(this.data.y < this.data.ty)
         this.data.direction = 0;
       else if(this.data.y > this.data.ty)
-        this.data.direction = 1;
+        this.data.direction = 3;
     
-    if(this.data.limboState)
-      ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
-    else
-      ctx.drawImage(this.img_knight, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+    if(!this.data.limboState)
+      ctx.drawImage(allImages['red_player'], this.data.direction*allImages['red_player'].spriteX, 0, allImages['red_player'].spriteX, allImages['red_player'].spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
 
     if(!this.data.isDead){
       ctx.fillStyle = '#FF371D';
@@ -292,8 +303,8 @@ function ActionBar(){
     
     ctx.drawImage(this.img, canvas.width/2-520,canvas.height-140, 1040, 144)
     ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
-    if(frameTime - player1.data.skills[0].cooldown < 0)
-      ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
+    // if(frameTime - player1.data.skills[0].cooldown < 0)
+    //   ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
       /* dont delete those */
