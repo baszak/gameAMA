@@ -9,19 +9,163 @@ function Item(id, name, stackable, quantity, type){
 }
 Skill.prototype = Object.create(Item.prototype);
 Skill.prototype.constructor = Skill;
-function Skill(id, name, stackable, quantity, type, abilities){
+function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   Item.call(this, id, name, stackable, quantity, type);
   this.abilities = abilities;
-  // this.cooldown = cd;
-  // this.lastUsed;
+  console.log(this.abilities[0].value)
+  this.cooldown = cooldown;
+  this.lastUseTime = frameTime;
+  this.ready = false;
+  this.equip = function(user, slot) {
+  	if(user.data.skills[slot] || slot > 3) return;
+  	user.data.skills[slot] = this;
+  	this.lastUseTime = frameTime;
+  	for(var i=0; i<this.abilities.length; i++){
+  		var a = this.abilities[i];
+  		if(a.type == skillType.PASSIVE)
+  			if(a.target == skillTarget.SELF)
+					if(a.effect == skillEffect.HEAL){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.healthRegen += user.data.healthRegenBase * a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.healthRegenBase += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.DMGBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.dmgMod += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.LIFESTEAL){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.lifeSteal += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.ATKSPEEDBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.atkSpeedBoost += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.EVASIONBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.evasion += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.CRITDMG){//x
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.critDamage *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.CRITCHANCE){//x
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.critChance *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.DMGREFLECT){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.dmgReflect += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.SPEEDBST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.speedBoost *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.MAGICIMMUNITY){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.magicImmunity *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.PHYSICALIMMUNITY){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.physicalImmunity *= (1 + a.value);
+  					}
+  				}
+  	}
+  };
+  this.takeOff = function(user, slot) {
+  	if(!user.data.skills[slot] || slot>3) return;
+  	user.data.skills[slot] = 0;
+  	for(var i=0; i<this.abilities.length; i++){
+  		var a = this.abilities[i]
+  		if(a.type == skillType.PASSIVE){
+  			if(a.target == skillTarget.SELF)
+  				if(a.effect == skillEffect.HEAL)
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.healthRegen -= user.data.healthRegenBase * a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.healthRegenBase -= a.value;
+  					}
+  				else if(a.effect == skillEffect.DMGBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.dmgMod += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.LIFESTEAL){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.lifeSteal += a.value;
+  					}
+  				}
+  				else if(a.effect == skillEffect.ATKSPEEDBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.atkSpeedBoost *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.EVASIONBOOST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.evasion *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.CRITDMG){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.critDamage *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.CRITCHANCE){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.critChance *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.DMGREFLECT){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.dmgReflect *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.SPEEDBST){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.speedBoost *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.MAGICIMMUNITY){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.magicImmunity *= (1 + a.value);
+  					}
+  				}
+  				else if(a.effect == skillEffect.PHYSICALIMMUNITY){
+  					if(a.valueType == valueType.PERCENT){
+  						user.data.physicalImmunity *= (1 + a.value);
+  					}
+  				}
+  		}
+  	}
+  	console.log('user: %o', user);
+  };
   this.activate = function() {
+  	this.lastUseTime = new Date().getTime();
 
   };
   this.update = function() {
+  	(frameTime - this.lastUseTime > this.cooldown)?(this.ready = true):(this.ready = false);
 
   };
 
 }
+
+// [{type: skillType.INSTANT, target: skillTarget.SELF, effect: skillEffect.HEAL, value: 35, valueType: valueType.STATIC, duration: 0}]);
+
+
 Weapon.prototype = Object.create(Item.prototype);
 Weapon.prototype.constructor = Weapon;
 function Weapon(id, name, stackable, quantity, type, level, damageMin, damageMax, damageMod, speedMod, range, hitrateMod, armorPenetration){
@@ -71,20 +215,15 @@ function ItemFactory(){
 	}
 	this.createSkill = function(array, cooldown){
 		var abilities = array;
-		for(var i=0; i<abilities.length; i++){
-			var a = abilities[i];
-			if(a.value && a.duration) continue; //that is when value and dur are specified
-			a.duration = Math.random()>0.2?a.duration=0:a.duration=Math.round((level/8)+Math.random()*Math.random()*Math.random()*10);
-		}
-			
+		var cooldown = cooldown;
 
 
 		var stackable = false;
 		var quantity = 1;
-		return (new Skill(this.curId++, 'skill_test', stackable, quantity, itemType.SKILL, abilities));
+		return (new Skill(this.curId++, 'skill_test', stackable, quantity, itemType.SKILL, abilities, cooldown));
 	}
 }
-var test = ifac.createSkill(10, [{type: skillType.INSTANT, target: skillTarget.SELF, effect: skillEffect.HEAL, value: 35, duration: 0}]);
+var test = ifac.createSkill([{type: skillType.INSTANT, target: skillTarget.SELF, effect: skillEffect.HEAL, value: 35, valueType: valueType.STATIC, duration: 0}], 40);
 
 function Container(max_size, parent_container){
 	this.name = 'container';

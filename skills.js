@@ -1,21 +1,15 @@
-Skill.prototype = Object.create(Item.prototype);
-Skill.prototype.constructor = Skill;
-function Skill(id, name, stackable, quantity, type, abilities){
-  Item.call(this, id, name, stackable, quantity, type);
-  this.abilities = abilities;
-}
-
-function playerIsReady(player, range, mana){
-  if(!targetedMob) {
-      statusMessage.showMessage("No target!", 1000);
-    } else if(player.exhausted > frameTime) {
-      statusMessage.showMessage("You are exhausted! ", 1000);
-    } else if(dist(player,targetedMob) > range) {
-      statusMessage.showMessage("Target out of range!", 1000);
-    } else if(player.manaCur < mana) {
-      statusMessage.showMessage("Not enough mana!", 1000);
-    } else
-      return 1;
+function ShortAnimation(x, y, name){
+  this.x = x;
+  this.y = y;
+  this.animStart = frameTime;
+  this.animationSpeed = 90;
+  this.update = function(){
+    this.animationFrame = Math.floor((frameTime - this.animStart) / this.animationSpeed);
+    if(this.animationFrame > allImages[name].spriteN) delete missiles[this.id];
+  }
+  this.draw = function(ctx){
+    ctx.drawImage(allImages[name], this.animationFrame*allImages[name].spriteX, 0, allImages[name].spriteX, allImages[name].spriteY, this.x * gh, this.y*gh, gh, gh);
+  }
 }
 function Projectile(caller_x, caller_y, target_x, target_y, type1, type2){
   this.explo_img = new Image();
@@ -138,19 +132,6 @@ function Rocket(url, target, caller, skill){
     }else{
       ctx.drawRotatedImage(this.img, this.x, this.y, gh, gh, this.dir+Math.PI/2);
     }
-  }
-}
-function ShortAnimation(x, y, name){
-  this.x = x;
-  this.y = y;
-  this.animStart = frameTime;
-  this.animationSpeed = 90;
-  this.update = function(){
-    this.animationFrame = Math.floor((frameTime - this.animStart) / this.animationSpeed);
-    if(this.animationFrame > allImages[name].spriteN) delete missiles[this.id];
-  }
-  this.draw = function(ctx){
-    ctx.drawImage(allImages[name], this.animationFrame*allImages[name].spriteX, 0, allImages[name].spriteX, allImages[name].spriteY, this.x * gh, this.y*gh, gh, gh);
   }
 }
 

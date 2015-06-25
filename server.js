@@ -235,7 +235,7 @@ function MonsterSpawner(){//server only
   this.createSpawn(Bat, 19, 18, 8);
   this.createSpawn(Bat, 12, 20, 8);
   this.createSpawn(Bat, 12, 9, 8);
-  this.createSpawn(Dummy, 21, 10, 10);
+  this.createSpawn(Rayman, 21, 10, 10);
   }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
@@ -691,6 +691,12 @@ function Dummy(id, spawn_x, spawn_y){
 }
 Dummy.prototype = Object.create(Foe.prototype);
 Dummy.prototype.constructor = Dummy;
+
+function Rayman(id, spawn_x, spawn_y){
+  Foe.call(this,'Rayman',id,spawn_x,spawn_y,false);
+}
+Rayman.prototype = Object.create(Foe.prototype);
+Rayman.prototype.constructor = Rayman;
 
 function Shroom(id, spawn_x, spawn_y){
   Foe.call(this,'Shroom',id,spawn_x,spawn_y,false);

@@ -53,12 +53,13 @@ function Map(url, w, h){
 }
 
 function Player(url, id, spawn_x, spawn_y, data_from_server){
-    this.img_knight = new Image(),
-    this.img_knight.src = url || "img/knight.png",
-    this.img_knight_green = new Image(),
-    this.img_knight_green.src = url || "img/knight_green.png",
-    this.img_limbo = new Image(),
-    this.img_limbo.src = url || "img/knight_limbo.png",
+  this.img_right = allImages['Rayman_right'];
+  this.img_left = allImages['Rayman_left'];
+  this.img_run_right = allImages['Rayman_run_right'];
+  this.img_run_left = allImages['Rayman_run_left'];
+  this.offsetY = this.img_right.spriteY - gh;
+  this.animationSpeed = 80;
+  var skillUser = this;
   this.data = {
     id: id || 1,
     name : "Playerino",
@@ -81,14 +82,33 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     healthCur: 100,
     manaMax: 900,
     manaCur: 900,
-    healthRegen: 0,
+    healthRegenBase: 100,
+    healthRegen: 100,
     manaRegen: 300,
     mmr: 1400,
     speedBase: 400,
     speedCur: 400,
+    baseAttackCooldown: 800,
+    /* percentage */
     critChance: 0.5,
     critDamage: 1,
-    //other shit
+    lifeSteal: 0,
+    dmgMod: 1,
+    atkSpeedBoost: 1,
+    evasion: 0,
+    dmgReflect: 0,
+    blockChance: 0,
+    magicImmunity: 0,
+    physicalImmunity: 0,
+    /* bools */
+    silenced: false,
+    stunned: false,
+    disarmed: false,
+    stealthed: false,
+    bleeding: false,
+    onFire: false,
+    poisoned: false,
+        //other shit
     moveValid: 1,
     isVisible: true,
     limboState: false,
@@ -97,16 +117,11 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     moveQ: new MovementQueue(),
     animStart: frameTime,
     lastAttack: frameTime,
-    attackCooldown: 800,
     exhausted: 0,
     buffTimer: 0,
     damageInfo: {totalDamage: 0},
-    skills: [
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0},
-      {cooldown: 0, action: 0}
-    ],
+    skills: [],
+
     equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "bow", range: 8*1.45},// o()XXXX[{::::::::::::::>
                   secondary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                   body: {},
@@ -117,6 +132,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
                 }
   }
 	this.update = function(){
+    for(var i=0; i<this.data.skills.length; i++){
+      if(this.data.skills[i])
+        this.data.skills[i].update();
+    }
     this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
     this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
     
@@ -141,6 +160,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
         socket.emit('player-input-move', {x: nextMove[0]-this.data.tx, y: nextMove[1]-this.data.ty});
           this.data.animStart = frameTime;
+          // this.animationFrame = 0;
           this.data.moving = true;
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
@@ -157,12 +177,12 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
+      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
         socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow', 'arrow_hit'))
-          default:
+            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'arrow_hit'))
+          case 'sword':
             // missiles.push(new AttackAnimation(targetedMob.data, this.data, this.data.equipment.primary.type));
         }
 
@@ -185,27 +205,41 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     this.data.isVisible = false;
   }
 	this.draw = function(ctx){
-      if(this.data.x < this.data.tx)
-        this.data.direction = 3;
-      else if(this.data.x > this.data.tx)
-        this.data.direction = 2;
-      else if(this.data.y < this.data.ty)
-        this.data.direction = 0;
-      else if(this.data.y > this.data.ty)
-        this.data.direction = 1;
-    
-    if(this.data.limboState)
-      ctx.drawImage(this.img_limbo, this.data.direction*32, 0, 32, 32, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+    this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.img_right.spriteN;
+    if(!this.data.moving)
+      this.animationFrame_run = 0;
     else
-      ctx.drawImage(this.img_knight, this.data.direction*16, 0, 16, 16, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+      this.animationFrame_run = Math.floor(frameTime / this.animationSpeed)%this.img_run_right.spriteN;
 
-    if(!this.data.isDead){
+      if(this.data.x < this.data.tx)//right  make enums of this shit
+        this.data.direction = 2;
+      else if(this.data.x > this.data.tx)//left
+        this.data.direction = 1;
+      else if(this.data.y < this.data.ty)//down
+        this.data.direction = 0;
+      else if(this.data.y > this.data.ty)//up
+        this.data.direction = 3;
+    
+    if(!this.data.moving){
+      if(this.data.direction == 2)
+        ctx.drawImage(this.img_right, this.animationFrame * this.img_right.spriteX, 0, this.img_right.spriteX, this.img_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_right.spriteX, this.img_right.spriteY);
+      else if(this.data.direction == 1)
+        ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
+    }
+    else{
+      if(this.data.direction == 2)
+        ctx.drawImage(this.img_run_right, this.animationFrame_run * this.img_run_right.spriteX, 0, this.img_run_right.spriteX, this.img_run_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_right.spriteX, this.img_run_right.spriteY);
+      else if(this.data.direction == 1)
+        ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
+    }
+
+    if(!this.data.isDead){ //draw healthbar
       ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
       ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 3);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24 * (this.data.healthCur/this.data.healthMax), 3);
       ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
     }
 	}
 }
@@ -292,8 +326,8 @@ function ActionBar(){
     
     ctx.drawImage(this.img, canvas.width/2-520,canvas.height-140, 1040, 144)
     ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
-    if(frameTime - player1.data.skills[0].cooldown < 0)
-      ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
+    // if(frameTime - player1.data.skills[0].cooldown < 0)
+    //   ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
       /* dont delete those */
