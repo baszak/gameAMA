@@ -1,5 +1,6 @@
 (function($) {
   var _globalWindowDragged = null;
+  var _globalWindowsCodragged = null;
   var _globalResizedWindow = null;
   var _globalDragAnchor = null;
   var _globalResizeDir = null;
@@ -10,8 +11,9 @@
   var _globalItemAnchor = null;
   var _globalTooltip = $(document.createElement("div"));
   _globalTooltip.addClass("globalTooltip");
-  _globalTooltip.appendTo(document.body);
+  _globalTooltip.appendTo(document.body).hide();
   var _globalTooptipTO;
+  var _globalWindows = [];
 
  
   var windowDefaults = {
@@ -36,6 +38,19 @@
     return this;
   };
   
+  function findGluedWindows(div){
+    for(var i = 0; i < _globalWindows.length; i++) {
+      var epos = _globalWindows[i].position();
+      var goodrect = div.position();
+      goodrect.top += div.outerHeight();
+      goodrect.width = div.outerWidth();
+      if(epos.left < goodrect.left + goodrect.width && epos.left + _globalWindows[i].outerWidth() > goodrect.left && epos.top >= goodrect.top-20 && epos.top <= goodrect.top+20) {
+        _globalWindowsCodragged.push({el:_globalWindows[i], dx:_globalWindows[i].position().left-_globalWindowDragged.position().left, dy:_globalWindows[i].position().top-_globalWindowDragged.position().top});
+        findGluedWindows(_globalWindows[i]);
+      }
+    }
+  }
+  
   $.fn.makeWindow = function(options) {
     var options = $.extend({}, windowDefaults, options);
     this.each(function() {
@@ -44,6 +59,7 @@
         height: options.height + 37,
         width: options.width + 12
       });
+      _globalWindows.push(div);
       var header = $(document.createElement("div")).addClass("header").appendTo(div);
       header.append('<div class="win_icon" style="background-image: url(img/'+options.icon+')"></div>').append('<div class="header_text">'+(options.title||'')+'</div>').append('<div class="win_btns"></div>');
       header.find('.win_btns').append('<div title="Close" class="button_close">x</div>');
@@ -52,8 +68,12 @@
       options.content && content.append(options.content);
       header.mousedown(function(e){
         _globalWindowDragged = div;
+        _globalWindowsCodragged = [];
+        findGluedWindows(div);
         div.css("z-index",++_globalZIndex);
         _globalDragAnchor = [e.clientX-div.position().left, e.clientY-div.position().top];
+        
+               
         e.preventDefault();
         return false;
       });
@@ -236,7 +256,7 @@
             top: ev.clientY + 10
           }).show();
           _globalTooltip.html("<div style='color:gold; border-bottom: 1px solid #676a5a;font-weight:bold;'>Golden armor<span style='float:right'>legendary</span></div><div style='color:#676a5a; border-bottom: 1px solid #676a5a;font-style:italic;font-size:9px;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam maximus pulvinar iaculis. Curabitur eu scelerisque tellus. Duis sce suck my dick lerisque erat at erat cursus, in semper eros interdum. </div><table><tr><td align=left width=130>Pancerz</td><td align=right style='color:#00ff00;font-weight:bold;'>+14</td></tr><tr><td align=left width=130>Szybkość ataku</td><td align=right style='color:#ff0000;font-weight:bold;'>-2</td></tr></table>");
-        },1000);
+        },500);
       });
       div.mouseout(function(){
           clearTimeout(_globalTooptipTO);
@@ -251,11 +271,28 @@
   
   $(document).ready(function(){
     $(document.body).mousemove(function(e) {
-      if(_globalWindowDragged){      
+      if(_globalWindowDragged){
+        var epos = {left:e.clientX - _globalDragAnchor[0], top: e.clientY - _globalDragAnchor[1]};
+        var toppopr = 0;
+        for(var i = 0; i < _globalWindows.length; i++) {
+          var goodrect = _globalWindows[i].position();
+          goodrect.top += _globalWindows[i].outerHeight();
+          goodrect.width = _globalWindows[i].outerWidth();
+          if(epos.left < goodrect.left + goodrect.width && epos.left + _globalWindowDragged.outerWidth() > goodrect.left && epos.top >= goodrect.top-20 && epos.top <= goodrect.top+20) {
+            toppopr= goodrect.top+2;
+            break;
+          }
+        }
         _globalWindowDragged.css({
           left: e.clientX - _globalDragAnchor[0],
-          top: e.clientY - _globalDragAnchor[1]
+          top: toppopr || (e.clientY - _globalDragAnchor[1])
         });
+        for(var i = 0; i < _globalWindowsCodragged.length; i++) {
+          _globalWindowsCodragged[i].el.css({
+            left: e.clientX - _globalDragAnchor[0] + _globalWindowsCodragged[i].dx,
+            top: (toppopr || (e.clientY - _globalDragAnchor[1])) +_globalWindowsCodragged[i].dy
+          });
+        }
         _globalWindowDragged.find(".header").css("cursor","move");
       }
       if(_globalResizedWindow){
@@ -270,6 +307,20 @@
     $(document.body).mouseup(function(e) {
       if(_globalWindowDragged){
         _globalWindowDragged.find(".header").css("cursor","default");
+        /*
+        var epos = {left:e.clientX + document.body.scrollLeft, top:e.clientY +document.body.scrollLeft};
+        for(var i = 0; i < _globalWindows.length; i++) {
+          var goodrect = _globalWindows[i].position();
+          goodrect.top += _globalWindows[i].outerHeight();
+          goodrect.width = _globalWindows[i].outerWidth();
+          console.log(goodrect, epos);
+          if(epos.left >= goodrect.left && epos.left <= goodrect.left + goodrect.width && epos.top >= goodrect.top-10 && epos.top <= goodrect.top+10) {
+            _globalWindowDragged.css({
+              top: goodrect.top+2
+            });
+            break;
+          }
+        }*/
         _globalWindowDragged = null;
       }
       if(_globalResizedWindow){
@@ -284,5 +335,18 @@
         _globalTooltip.hide();
       },200);
     });
+    
+    $("#c1 img")[0].ondragstart = function(ev) {
+      ev.dataTransfer.setData("text", "item1");
+      _globalItemAnchor = {left: 0, top: 0};
+
+      ev.dataTransfer.setDragImage($("#item1")[0], 16, 16);
+      ev.dataTransfer.effectAllowed = "move";
+      clearTimeout(_globalTooptipTO);
+      _globalTooltip.hide();
+    }
+    $("#c1 img")[0].ondragend = function(ev) {
+      _globalFakeItem.hide();    
+    }
   });
 }( jQuery ));

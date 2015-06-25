@@ -196,3 +196,31 @@ input:focus {
   width:100%;
   height:100%;
 }
+
+.ctx_menu {
+  border: 1px solid #181913;
+  position: absolute;
+  background-color: #676a5a;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: verdana;
+  padding: 1px;
+}
+
+.ctx_menu li {
+  list-style-type: none;
+  cursor: pointer;
+  padding: 1px;
+  padding-left: 10px;
+}
+
+.ctx_item:hover {
+  color: #676a5a;
+  background-color: #272822;
+}
+
+.ctx_menu li.ctx_sep {
+  background-color: #181913;
+  padding-bottom: 0;
+  margin: 1px;
+}

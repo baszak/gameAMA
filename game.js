@@ -1,4 +1,4 @@
-var player_id = prompt('id: ');
+var player_id = 18;//prompt('id: ');
 
 var socket = io.connect('http://localhost:6767');
 socket.on('players-move-update', function(data){
@@ -266,6 +266,6 @@ $(document).ready(function(){
 
   requestAnimationFrame(update);
   $(document).keydown(function(e){ lastKeyEvent = e; });
-  $('img').mousemove(function(e){ mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)}; });
+  $('#c1 img').mousemove(function(e){ mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)}; });
   // $('img').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });
 });
