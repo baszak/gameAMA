@@ -53,6 +53,12 @@ function Map(url, w, h){
 }
 
 function Player(url, id, spawn_x, spawn_y, data_from_server){
+  this.img_right = allImages['Rayman_right'];
+  this.img_left = allImages['Rayman_left'];
+  this.img_run_right = allImages['Rayman_run_right'];
+  this.img_run_left = allImages['Rayman_run_left'];
+  this.offsetY = this.img_right.spriteY - gh;
+  this.animationSpeed = 80;
   var skillUser = this;
   this.data = {
     id: id || 1,
@@ -154,6 +160,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
         socket.emit('player-input-move', {x: nextMove[0]-this.data.tx, y: nextMove[1]-this.data.ty});
           this.data.animStart = frameTime;
+          // this.animationFrame = 0;
           this.data.moving = true;
           this.data.tx = nextMove[0];
           this.data.ty = nextMove[1];
@@ -198,25 +205,41 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     this.data.isVisible = false;
   }
 	this.draw = function(ctx){
-      if(this.data.x < this.data.tx)
+    this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.img_right.spriteN;
+    if(!this.data.moving)
+      this.animationFrame_run = 0;
+    else
+      this.animationFrame_run = Math.floor(frameTime / this.animationSpeed)%this.img_run_right.spriteN;
+
+      if(this.data.x < this.data.tx)//right  make enums of this shit
         this.data.direction = 2;
-      else if(this.data.x > this.data.tx)
+      else if(this.data.x > this.data.tx)//left
         this.data.direction = 1;
-      else if(this.data.y < this.data.ty)
+      else if(this.data.y < this.data.ty)//down
         this.data.direction = 0;
-      else if(this.data.y > this.data.ty)
+      else if(this.data.y > this.data.ty)//up
         this.data.direction = 3;
     
-    if(!this.data.limboState)
-      ctx.drawImage(allImages['red_player'], this.data.direction*allImages['red_player'].spriteX, 0, allImages['red_player'].spriteX, allImages['red_player'].spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh, gh, gh);
+    if(!this.data.moving){
+      if(this.data.direction == 2)
+        ctx.drawImage(this.img_right, this.animationFrame * this.img_right.spriteX, 0, this.img_right.spriteX, this.img_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_right.spriteX, this.img_right.spriteY);
+      else if(this.data.direction == 1)
+        ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
+    }
+    else{
+      if(this.data.direction == 2)
+        ctx.drawImage(this.img_run_right, this.animationFrame_run * this.img_run_right.spriteX, 0, this.img_run_right.spriteX, this.img_run_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_right.spriteX, this.img_run_right.spriteY);
+      else if(this.data.direction == 1)
+        ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
+    }
 
-    if(!this.data.isDead){
+    if(!this.data.isDead){ //draw healthbar
       ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
       ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24 * (this.data.healthCur/this.data.healthMax), 3);
+      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24 * (this.data.healthCur/this.data.healthMax), 3);
       ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh -gh/6, 24, 3);
+      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
     }
 	}
 }
