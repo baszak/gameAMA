@@ -55,8 +55,12 @@ function Map(url, w, h){
 function Player(url, id, spawn_x, spawn_y, data_from_server){
   this.img_right = allImages['Rayman_right'];
   this.img_left = allImages['Rayman_left'];
+  this.img_front = allImages['Rayman_front'];
+  this.img_back = allImages['Rayman_back'];
   this.img_run_right = allImages['Rayman_run_right'];
   this.img_run_left = allImages['Rayman_run_left'];
+  this.img_run_front = allImages['Rayman_run_front'];
+  this.img_run_back = allImages['Rayman_run_back'];
   this.offsetY = this.img_right.spriteY - gh;
   this.animationSpeed = 80;
   var skillUser = this;
@@ -181,7 +185,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'arrow_hit'))
+            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'))
           case 'sword':
             // missiles.push(new AttackAnimation(targetedMob.data, this.data, this.data.equipment.primary.type));
         }
@@ -225,12 +229,22 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         ctx.drawImage(this.img_right, this.animationFrame * this.img_right.spriteX, 0, this.img_right.spriteX, this.img_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_right.spriteX, this.img_right.spriteY);
       else if(this.data.direction == 1)
         ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
+      else if(this.data.direction == 0)
+        ctx.drawImage(this.img_front, this.animationFrame * this.img_front.spriteX, 0, this.img_front.spriteX, this.img_front.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_front.spriteX, this.img_front.spriteY);
+      else if(this.data.direction == 3)
+        ctx.drawImage(this.img_back, this.animationFrame * this.img_back.spriteX, 0, this.img_back.spriteX, this.img_back.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_back.spriteX, this.img_back.spriteY);
+
     }
     else{
       if(this.data.direction == 2)
         ctx.drawImage(this.img_run_right, this.animationFrame_run * this.img_run_right.spriteX, 0, this.img_run_right.spriteX, this.img_run_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_right.spriteX, this.img_run_right.spriteY);
       else if(this.data.direction == 1)
         ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
+      else if(this.data.direction == 0)
+        ctx.drawImage(this.img_run_front, this.animationFrame_run * this.img_run_front.spriteX, 0, this.img_run_front.spriteX, this.img_run_front.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_front.spriteX, this.img_run_front.spriteY);
+      else if(this.data.direction == 3)
+        ctx.drawImage(this.img_run_back, this.animationFrame_run * this.img_run_back.spriteX, 0, this.img_run_back.spriteX, this.img_run_back.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_back.spriteX, this.img_run_back.spriteY);
+
     }
 
     if(!this.data.isDead){ //draw healthbar
@@ -526,13 +540,15 @@ function Entity(img_name, x, y, decay_time, fade_time){
   this.y = y;
   this.spriteX = allImages[img_name].spriteX || 0;
   this.spriteY = allImages[img_name].spriteY || 0;
+  this.offsetX = allImages[img_name].offsetX || 0;
+  this.offsetY = allImages[img_name].offsetY || 0;
   this.spritePart = Math.floor(Math.random()*100)%allImages[img_name].spriteN;
   this.draw = function(ctx){
     if(this.decayTime && this.fadeTime && frameTime > (this.startTime + this.decayTime - this.fadeTime)){
       ctx.globalAlpha = (this.startTime + this.decayTime - frameTime)/ this.fadeTime;
       ctx.globalAlpha < 0 && (ctx.globalAlpha = 0);
     }
-    ctx.drawImage(allImages[img_name], this.spritePart*this.spriteX, 0, gh, gh, this.x*gh+map.x, this.y*gh+map.y, gh, gh);
+    ctx.drawImage(allImages[img_name], this.spritePart*this.spriteX, 0, this.spriteX, this.spriteY, this.x*gh+map.x - this.offsetX, this.y*gh+map.y - this.offsetY, this.spriteX, this.spriteY);
     ctx.globalAlpha = 1;
   }
 }

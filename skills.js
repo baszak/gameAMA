@@ -11,7 +11,10 @@ function ShortAnimation(x, y, name){
     ctx.drawImage(allImages[name], this.animationFrame*allImages[name].spriteX, 0, allImages[name].spriteX, allImages[name].spriteY, this.x * gh, this.y*gh, gh, gh);
   }
 }
-function Projectile(caller_x, caller_y, target_x, target_y, type1, type2){
+
+
+                                                          //projectile, hit, miss
+function Projectile(caller_x, caller_y, target_x, target_y, type1, type2, type3){
   this.explo_img = new Image();
   this.explo_img.src = "img/explo.png"
   this.x = caller_x;
@@ -22,11 +25,12 @@ function Projectile(caller_x, caller_y, target_x, target_y, type1, type2){
   if(!los.isClear){
     this.tx = los.obstacle.x;
     this.ty = los.obstacle.y;
+    type2 = type3;
   }
   this.animStart = frameTime;
   this.speed = 30*dist({tx: this.x, ty: this.y}, {tx: this.tx, ty: this.ty});
   this.state = 1;
-  this.animationSpeed = 120;
+  this.animationSpeed = 80;
   this.angle = Math.atan2(this.ty-this.y,this.tx-this.x) + Math.PI/2;
 
 

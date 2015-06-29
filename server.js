@@ -22,19 +22,9 @@ var onlinePlayersData = {};
 
 io.on('connection', function (socket) {
 
-
   socket.on('player-login-attempt', function (new_player_id){
     console.log('connecting ' + new_player_id + ' ...');
-    var playerFound = false;
-    for(i in allPlayers){ //players are stored by id
-        if(i == new_player_id){
-          playerFound = true;
-          break;
-        }
-    }
-    if(playerFound){
-      //pull existing player from database, so he can be updated
-      //just send id for now. later send entire player data
+    if(allPlayers.hasOwnProperty(new_player_id)){
       io.to(socket.id).emit('player-login-success', {id: new_player_id, playerData: allPlayers[new_player_id]});
     }
     else{
@@ -47,14 +37,15 @@ io.on('connection', function (socket) {
     //notify all players that a player connected
     for(var sId in onlinePlayersData){
       var export_data = {};
-      export_data.id = onlinePlayersData[socket.id].id;
-      export_data.level = onlinePlayersData[socket.id].level;
-      export_data.x = onlinePlayersData[socket.id].tx;
-      export_data.y = onlinePlayersData[socket.id].ty;
-      export_data.healthMax = onlinePlayersData[socket.id].healthMax;
-      export_data.healthCur = onlinePlayersData[socket.id].healthCur;
-      export_data.speedCur = onlinePlayersData[socket.id].speedCur;
-      export_data.name = onlinePlayersData[socket.id].name;
+      var o = onlinePlayersData[socket.id];
+      export_data.id = o.id;
+      export_data.level = o.level;
+      export_data.x = o.tx;
+      export_data.y = o.ty;
+      export_data.healthMax = o.healthMax;
+      export_data.healthCur = o.healthCur;
+      export_data.speedCur = o.speedCur;
+      export_data.name = o.name;
       io.to(sId).emit('player-connected', export_data);
     }
     //connecting player gets onlinePlayersData initially
@@ -235,7 +226,7 @@ function MonsterSpawner(){//server only
   this.createSpawn(Bat, 19, 18, 8);
   this.createSpawn(Bat, 12, 20, 8);
   this.createSpawn(Bat, 12, 9, 8);
-  this.createSpawn(Rayman, 21, 10, 10);
+  this.createSpawn(Stonoga, 21, 10, 10);
   }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
@@ -692,11 +683,11 @@ function Dummy(id, spawn_x, spawn_y){
 Dummy.prototype = Object.create(Foe.prototype);
 Dummy.prototype.constructor = Dummy;
 
-function Rayman(id, spawn_x, spawn_y){
-  Foe.call(this,'Rayman',id,spawn_x,spawn_y,false);
+function Stonoga(id, spawn_x, spawn_y){
+  Foe.call(this,'Stonoga',id,spawn_x,spawn_y,false);
 }
-Rayman.prototype = Object.create(Foe.prototype);
-Rayman.prototype.constructor = Rayman;
+Stonoga.prototype = Object.create(Foe.prototype);
+Stonoga.prototype.constructor = Stonoga;
 
 function Shroom(id, spawn_x, spawn_y){
   Foe.call(this,'Shroom',id,spawn_x,spawn_y,false);
@@ -704,12 +695,8 @@ function Shroom(id, spawn_x, spawn_y){
 Shroom.prototype = Object.create(Foe.prototype);
 Shroom.prototype.constructor = Shroom;
 
-function calcLineOfSight (start_x, start_y, end_x, end_y) {
+function calcLineOfSight (x1, y1, x2, y2) {
   var coordinatesArray = [];
-  var x1 = start_x;
-  var y1 = start_y;
-  var x2 = end_x;
-  var y2 = end_y;
   var dx = Math.abs(x2 - x1);
   var dy = Math.abs(y2 - y1);
   var sx = (x1 < x2) ? 1 : -1;

@@ -1,4 +1,5 @@
 function Mob(id, tx, ty, healthMax, healthCur, speed, name){
+  this.img = allImages[name] || allImages['placeholder'];
   this.data = {
     id: id,
     name: name,
@@ -13,9 +14,9 @@ function Mob(id, tx, ty, healthMax, healthCur, speed, name){
     animStart: frameTime,
     moving: false,
     animationSpeed: 200,
-    spriteX: allImages[name].spriteX || 84,
-    spriteY: allImages[name].spriteY || 84,
-    spriteN: allImages[name].spriteN || 8,
+    spriteX: this.img.spriteX || 84,
+    spriteY: this.img.spriteY || 84,
+    spriteN: this.img.spriteN || 8,
     isVisible: true
   }
   this.lastTime = frameTime;
@@ -27,7 +28,7 @@ function Mob(id, tx, ty, healthMax, healthCur, speed, name){
   }
   this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
-    ctx.drawImage(allImages[this.data.name], this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
+    ctx.drawImage(this.img, this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
     if(this.isTargeted){
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
       ctx.strokeRect((this.data.x)*gh, (this.data.y)*gh, gh, gh);
