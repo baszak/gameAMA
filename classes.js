@@ -55,12 +55,12 @@ function Map(url, w, h){
 function Player(url, id, spawn_x, spawn_y, data_from_server){
   this.img_right = allImages['Rayman_right'];
   this.img_left = allImages['Rayman_left'];
-  this.img_front = allImages['Rayman_front'];
-  this.img_back = allImages['Rayman_back'];
+  this.img_down = allImages['Rayman_down'];
+  this.img_up = allImages['Rayman_up'];
   this.img_run_right = allImages['Rayman_run_right'];
   this.img_run_left = allImages['Rayman_run_left'];
-  this.img_run_front = allImages['Rayman_run_front'];
-  this.img_run_back = allImages['Rayman_run_back'];
+  this.img_run_down = allImages['Rayman_run_down'];
+  this.img_run_up = allImages['Rayman_run_up'];
   this.offsetY = this.img_right.spriteY - gh;
   this.animationSpeed = 80;
   var skillUser = this;
@@ -92,9 +92,11 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     mmr: 1400,
     speedBase: 400,
     speedCur: 400,
-    baseAttackCooldown: 800,
+    baseAttackCooldown: 2000,
     /* percentage */
+    critChanceBase: 0,
     critChance: 0.5,
+    critDamageBase: 1,
     critDamage: 1,
     lifeSteal: 0,
     dmgMod: 1,
@@ -185,7 +187,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'))
+            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
           case 'sword':
             // missiles.push(new AttackAnimation(targetedMob.data, this.data, this.data.equipment.primary.type));
         }
@@ -230,9 +232,9 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
       else if(this.data.direction == 1)
         ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
       else if(this.data.direction == 0)
-        ctx.drawImage(this.img_front, this.animationFrame * this.img_front.spriteX, 0, this.img_front.spriteX, this.img_front.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_front.spriteX, this.img_front.spriteY);
+        ctx.drawImage(this.img_down, this.animationFrame * this.img_down.spriteX, 0, this.img_down.spriteX, this.img_down.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_down.spriteX, this.img_down.spriteY);
       else if(this.data.direction == 3)
-        ctx.drawImage(this.img_back, this.animationFrame * this.img_back.spriteX, 0, this.img_back.spriteX, this.img_back.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_back.spriteX, this.img_back.spriteY);
+        ctx.drawImage(this.img_up, this.animationFrame * this.img_up.spriteX, 0, this.img_up.spriteX, this.img_up.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_up.spriteX, this.img_up.spriteY);
 
     }
     else{
@@ -241,9 +243,9 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
       else if(this.data.direction == 1)
         ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
       else if(this.data.direction == 0)
-        ctx.drawImage(this.img_run_front, this.animationFrame_run * this.img_run_front.spriteX, 0, this.img_run_front.spriteX, this.img_run_front.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_front.spriteX, this.img_run_front.spriteY);
+        ctx.drawImage(this.img_run_down, this.animationFrame_run * this.img_run_down.spriteX, 0, this.img_run_down.spriteX, this.img_run_down.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_down.spriteX, this.img_run_down.spriteY);
       else if(this.data.direction == 3)
-        ctx.drawImage(this.img_run_back, this.animationFrame_run * this.img_run_back.spriteX, 0, this.img_run_back.spriteX, this.img_run_back.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_back.spriteX, this.img_run_back.spriteY);
+        ctx.drawImage(this.img_run_up, this.animationFrame_run * this.img_run_up.spriteX, 0, this.img_run_up.spriteX, this.img_run_up.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_up.spriteX, this.img_run_up.spriteY);
 
     }
 

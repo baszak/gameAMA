@@ -29,16 +29,23 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   						user.data.healthRegen += user.data.healthRegenBase * a.value;
   					}
   					else if(a.valueType == valueType.STATIC){
-  						user.data.healthRegenBase += a.value;
+  						user.data.healthRegen += a.value;
+
   					}
   				}
   				else if(a.effect == skillEffect.DMGBOOST){
   					if(a.valueType == valueType.PERCENT){
+  						user.data.dmgMod += user.data.dmgModBase * a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
   						user.data.dmgMod += a.value;
   					}
   				}
   				else if(a.effect == skillEffect.LIFESTEAL){
   					if(a.valueType == valueType.PERCENT){
+  						user.data.lifeSteal += user.data.lifeStealBase * a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
   						user.data.lifeSteal += a.value;
   					}
   				}
@@ -54,16 +61,24 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   				}
   				else if(a.effect == skillEffect.CRITDMG){//x
   					if(a.valueType == valueType.PERCENT){
-  						user.data.critDamage *= (1 + a.value);
+  						user.data.critDamage += user.data.critDamageBase * a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.critDamage += a.value;
   					}
   				}
   				else if(a.effect == skillEffect.CRITCHANCE){//x
   					if(a.valueType == valueType.PERCENT){
-  						user.data.critChance *= (1 + a.value);
+  						user.data.critChance += user.data.critChanceBase*a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.critChance += a.value;
   					}
   				}
   				else if(a.effect == skillEffect.DMGREFLECT){
   					if(a.valueType == valueType.PERCENT){
+  					}
+  					else if(a.valueType == valueType.STATIC){
   						user.data.dmgReflect += a.value;
   					}
   				}
@@ -96,7 +111,7 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   						user.data.healthRegen -= user.data.healthRegenBase * a.value;
   					}
   					else if(a.valueType == valueType.STATIC){
-  						user.data.healthRegenBase -= a.value;
+  						user.data.healthRegen -= a.value;
   					}
   				else if(a.effect == skillEffect.DMGBOOST){
   					if(a.valueType == valueType.PERCENT){
@@ -125,12 +140,18 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   				}
   				else if(a.effect == skillEffect.CRITCHANCE){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.critChance *= (1 + a.value);
+  						user.data.critChance -= user.data.critChanceBase*a.value;
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.critChance -= a.value;
+
   					}
   				}
   				else if(a.effect == skillEffect.DMGREFLECT){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.dmgReflect *= (1 + a.value);
+  					}
+  					else if(a.valueType == valueType.STATIC){
+  						user.data.dmgReflect -= a.value;
   					}
   				}
   				else if(a.effect == skillEffect.SPEEDBST){

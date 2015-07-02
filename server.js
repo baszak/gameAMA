@@ -168,6 +168,7 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
     export_mobs[i].name = mobzz[i].name;
     export_mobs[i].id = mobzz[i].id;
   }
+  for(sId in onlinePlayersData)
     io.to(sId).emit('data-update', {mobs: export_mobs, players: export_players});
 }, 1000/16);
 
@@ -226,7 +227,7 @@ function MonsterSpawner(){//server only
   this.createSpawn(Bat, 19, 18, 8);
   this.createSpawn(Bat, 12, 20, 8);
   this.createSpawn(Bat, 12, 9, 8);
-  this.createSpawn(Stonoga, 21, 10, 10);
+  this.createSpawn(Fly, 21, 10, 10);
   }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
@@ -295,13 +296,39 @@ function Player(id, spawn_x, spawn_y){
     healthCur: 100,
     manaMax: 900,
     manaCur: 900,
+    healthRegenBase: 0,
     healthRegen: 0,
     manaRegen: 300,
     mmr: 1400,
     speedBase: 400,
     speedCur: 400,
-    critChance: 0.5,
+
+
+    critChanceBase: 0,
+    critChance: 0,
+    critDamageBase: 1,
     critDamage: 1,
+    lifeSteal: 0,
+    dmgMod: 1,
+    atkSpeedBase: 1,
+    atkSpeed: 1,
+    evasion: 0,
+    dmgReflect: 0,
+    blockChance: 0,
+    magicImmunity: 0,
+    physicalImmunity: 0,
+
+    /* bools */
+    silenced: false,
+    stunned: false,
+    disarmed: false,
+    stealthed: false,
+    bleeding: false,
+    onFire: false,
+    poisoned: false,
+
+
+
     moveValid: 1,
     isDead: false,
     isVisible: true,
@@ -309,7 +336,7 @@ function Player(id, spawn_x, spawn_y){
     moveQ: new MovementQueue(),
     animStart: frameTime,
     lastAttack: frameTime,
-    attackCooldown: 800,
+    attackCooldown: 2000,
     exhausted: 0,
     buffTimer: 0,
     damageInfo: {totalDamage: 0},
@@ -320,7 +347,7 @@ function Player(id, spawn_x, spawn_y){
       {cooldown: 0, action: 0}
     ],
     equipment: {  primary: {damageMin: 5, damageMax: 10, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "bow", range: 8*1.45},// o()XXXX[{::::::::::::::>
-                        secondary: {damageMin: 1, damageMax: 3, damageMod: 0.11, dmgOverTime: 0.12, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
+                        secondary: {damageMin: 1, damageMax: 3, damageMod: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
                         boots: {speedMod: 1},
@@ -379,22 +406,40 @@ function Player(id, spawn_x, spawn_y){
     var id = null;
     if(!this.data.isDead){
       if(target_type == 1){//if target is mob get mobs place in mobzz
-        for(var i=0; i<mobzz.length; i++){
+        var len = mobzz.length
+        for(var i=0; i<len; i++){
           if(mobzz[i].id == target_id){
-            id = i;
-            break;
+            target = mobzz[i];
+            targetData = mobzz[i];
           }
         }
       }
-      target_type==0 && (id = target_id);//for players this is sufficient
-      if(frameTime - this.data.lastAttack > (this.data.attackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && mobzz[id] && dist(this.data, mobzz[id])<this.data.equipment.primary.range){
-        if(this.data.equipment.primary.type == 'bow' && calcLineOfSight(this.data.tx, this.data.ty, mobzz[id].tx, mobzz[id].ty)){
-          var damage = calcDamage(this.data, mobzz[id])
-          target_type==0 ? allPlayers[id].takeDamage(this.data.id, damage) : mobzz[id].takeDamage(this.data.id, damage)
-        }
+      else{
+        target = allPlayers[target_id];
+        targetData = allPlayers[target_id].data;
+      }//thats for players
+
+      if(frameTime - this.data.lastAttack > (this.data.attackCooldown / this.data.atkSpeed) && target && dist(this.data, targetData)<this.data.equipment.primary.range){
         this.data.lastAttack = frameTime;
+
+        if(this.data.equipment.primary.type == 'bow' && !calcLineOfSight(this.data.tx, this.data.ty, target.tx, target.ty))
+          return;        
+
+        if(target_type==0){
+          var damage = calcDamage(this.data, targetData);
+          target.takeDamage(this.data.id, damage);
+          //allPlayers[id].applyEffect();
+        }
+        else if(target_type==1){
+          var damage = calcDamage(this.data, targetData);
+          target.takeDamage(this.data.id, damage);
+          //mobzz[id].applyEffect();
+        }
       }
     }
+  }
+  this.applyEffect = function() {
+
   }
   this.takeDamage = function(attackerId, damage){
 
@@ -561,6 +606,9 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
       this.lastAttack = frameTime;
     }
   }
+  this.applyEffect = function() {
+    
+  }
   this.takeDamage = function(attackerId, damage){
     if(!this.targetId) this.targetId = attackerId;
     var damageTaken = Math.min(damage, this.healthCur);
@@ -614,9 +662,9 @@ function calcDamage(attacker, enemy){
   var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
   var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
   baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
-  baseDamage -= enemy.defenseRating;//basically damage absorbtion
+  baseDamage -= enemy.defenseRating || 0;//basically damage absorbtion
   var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
-  damage += damage*attacker.equipment.primary.damageMod;
+  damage *= attacker.dmgMod;
   return (damage>=0)?Math.round(damage):0;//keep it in integers
 }
 function updateStats(player){
@@ -661,6 +709,18 @@ function Bat(id, spawn_x, spawn_y){
 }
 Bat.prototype = Object.create(Foe.prototype);
 Bat.prototype.constructor = Bat;
+
+function Fly(id, spawn_x, spawn_y){
+  Foe.call(this,'Fly',id,spawn_x,spawn_y,true);
+  this.healthMax = 45;
+  this.healthCur = 45;
+  this.exp = 10000;
+  this.damageMin = 0;
+  this.damageMax = 12;
+  this.defenseRating = 0;
+}
+Fly.prototype = Object.create(Foe.prototype);
+Fly.prototype.constructor = Fly;
 
 
 function Ogre(id, spawn_x, spawn_y){

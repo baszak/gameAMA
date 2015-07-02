@@ -1,4 +1,4 @@
-var player_id = 18;//prompt('id: ');
+var player_id = prompt('id: ');
 
 var socket = io.connect('http://localhost:6767');
 socket.on('players-move-update', function(data){
@@ -83,6 +83,9 @@ socket.on('mob-death', function (data){
 });
 socket.on('player-death', function (data){
   alert("You're dead son. Better luck next time.");
+});
+socket.on('player-attack-bow', function (data){
+  //missiles.push(new Projectile(otherPlayers[data.id].data.tx, otherPlayers[data.id].data.ty, data.x, data.y, 'arrow_new', 'blood_hit', 'arrow_hit'))
 });
 var server_dataBuffer = [];
 var mobzz = {};
