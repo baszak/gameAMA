@@ -170,7 +170,7 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
   }
   for(sId in onlinePlayersData)
     io.to(sId).emit('data-update', {mobs: export_mobs, players: export_players});
-}, 1000/16);
+}, 1000/22);
 
 function Map(h, w){
   this.h = h;
@@ -422,8 +422,13 @@ function Player(id, spawn_x, spawn_y){
       if(frameTime - this.data.lastAttack > (this.data.attackCooldown / this.data.atkSpeed) && target && dist(this.data, targetData)<this.data.equipment.primary.range){
         this.data.lastAttack = frameTime;
 
-        if(this.data.equipment.primary.type == 'bow' && !calcLineOfSight(this.data.tx, this.data.ty, target.tx, target.ty))
-          return;        
+        if(this.data.equipment.primary.type == 'bow'){
+          var los = calcLineOfSight(this.data.tx, this.data.ty, targetData.tx, targetData.ty);
+          for(sId in onlinePlayersData)
+            io.to(sId).emit('player-attack-bow', {id: this.data.id, target: los.obstacle});
+          if(!los.isClear)
+            return;
+        }
 
         if(target_type==0){
           var damage = calcDamage(this.data, targetData);
@@ -588,7 +593,7 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
         for(var sId in onlinePlayersData){
           var id = onlinePlayersData[sId].id;
           if(!allPlayers[id]) continue;
-          if(allPlayers[id].data.isVisible && dist(this, allPlayers[id].data) < this.aggroRange && calcLineOfSight(this.tx, this.ty, allPlayers[id].data.tx, allPlayers[id].data.ty)){
+          if(allPlayers[id].data.isVisible && dist(this, allPlayers[id].data) < this.aggroRange && calcLineOfSight(this.tx, this.ty, allPlayers[id].data.tx, allPlayers[id].data.ty).isClear){
             this.aggro = true;
             this.targetId = id;
             this.leeshTimer = new Date().getTime();
@@ -779,7 +784,7 @@ function calcLineOfSight (x1, y1, x2, y2) {
   for(var i=0; i<coordinatesArray.length; i++){
     var y = coordinatesArray[i][0];
     var x = coordinatesArray[i][1];
-    if(map.world[x][y] >= 1) return false;
+    if(map.world[x][y] >= 1) return {isClear: false, obstacle: {x: x, y:y}};
   }
-  return true;
+  return {isClear: true, obstacle: {x: x, y: y}};
 }

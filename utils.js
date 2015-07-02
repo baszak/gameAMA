@@ -174,7 +174,7 @@ function calcLineOfSight (start_x, start_y, end_x, end_y) {
   for(var i=0; i<coordinatesArray.length; i++){
   	var y = coordinatesArray[i][0];
   	var x = coordinatesArray[i][1];
-  	if(map.world[x][y] >= 1) return {isClear: false, obstacle: {x: x, y:y}};
+  	if(map.world[x][y] >= 1) return {isClear: false, obstacle: {x: x, y: y}};
   }
   return {isClear: true};
 }

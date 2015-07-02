@@ -85,7 +85,7 @@ socket.on('player-death', function (data){
   alert("You're dead son. Better luck next time.");
 });
 socket.on('player-attack-bow', function (data){
-  //missiles.push(new Projectile(otherPlayers[data.id].data.tx, otherPlayers[data.id].data.ty, data.x, data.y, 'arrow_new', 'blood_hit', 'arrow_hit'))
+  missiles.push(new Projectile(otherPlayers[data.id].data.tx, otherPlayers[data.id].data.ty, data.target.x, data.target.y, 'arrow_new', 'blood_hit', 'arrow_hit'))
 });
 var server_dataBuffer = [];
 var mobzz = {};
