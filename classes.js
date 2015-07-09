@@ -215,7 +215,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     if(!this.data.moving)
       this.animationFrame_run = 0;
     else
-      this.animationFrame_run = Math.floor(frameTime / this.animationSpeed)%this.img_run_right.spriteN;
+      this.animationFrame_run = Math.floor(frameTime/ this.animationSpeed)%this.img_run_right.spriteN;
 
       if(this.data.x < this.data.tx)//right  make enums of this shit
         this.data.direction = 2;

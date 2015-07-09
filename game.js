@@ -85,6 +85,7 @@ socket.on('player-death', function (data){
   alert("You're dead son. Better luck next time.");
 });
 socket.on('player-attack-bow', function (data){
+  if(data.id == player_id) return;
   missiles.push(new Projectile(otherPlayers[data.id].data.tx, otherPlayers[data.id].data.ty, data.target.x, data.target.y, 'arrow_new', 'blood_hit', 'arrow_hit'))
 });
 var server_dataBuffer = [];
@@ -159,11 +160,12 @@ function handleClick(e) {
     // }
     for(var i in mobzz){
       var enemy = mobzz[i];
-      if(Math.floor((mousepos.x - map.x)/gh) == enemy.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.ty){
-        if(targetedMob && targetedMob != enemy) targetedMob.isTargeted = false;
-          (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
-          player1.data.moveQ.currentPath = [];
-        }
+      if(Math.floor((mousepos.x - map.x)/gh) == enemy.data.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.data.ty){
+        if(targetedMob && targetedMob != enemy)
+          targetedMob.isTargeted = false;
+        (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
+        player1.data.moveQ.currentPath = [];
+      }
     }
   }
 }
@@ -269,5 +271,5 @@ $(document).ready(function(){
   requestAnimationFrame(update);
   $(document).keydown(function(e){ lastKeyEvent = e; });
   $('#c1 img').mousemove(function(e){ mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)}; });
-  // $('img').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });
+  $('#img2').mousedown(handleClick).on('dragstart', function(e) { e.preventDefault(); });
 });

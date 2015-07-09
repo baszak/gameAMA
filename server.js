@@ -81,9 +81,9 @@ io.on('connection', function (socket) {
   });
   socket.on('ping', function(data){
     io.to(socket.id).emit('ping back', data);
-    for(var i=0; i<mobzz.length; i++){
-      console.log('id: '+ mobzz[i].id + ' i' + i)
-    }
+      var id = onlinePlayersData[socket.id].id;
+      allPlayers[id].data.healthCur = allPlayers[id].data.healthMax;
+      allPlayers[id].data.experience += 10000;
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -98,7 +98,7 @@ io.on('connection', function (socket) {
     if(onlinePlayersData.hasOwnProperty(socket.id)){
       var id = onlinePlayersData[socket.id].id;
       //pull disconnecting player back into database.
-      console.log('disconnecting' + id);
+      console.log('disconnecting ' + id);
       for(var sId in onlinePlayersData)//tell all clients that this id is no more
         io.to(sId).emit('player-disconnected', onlinePlayersData[socket.id].id);
       //no longer update player that disconnected.
@@ -106,10 +106,8 @@ io.on('connection', function (socket) {
     }
   });
   socket.on('player-attack', function (data){
-    if(data.type == 1){
-      var id = onlinePlayersData[socket.id].id;
-      allPlayers[id].attack(data.id, data.type);
-    }
+    var id = onlinePlayersData[socket.id].id;
+    allPlayers[id].attack(data.id, data.type);
   });
 });
 function emitSpawning(foe){
@@ -414,10 +412,10 @@ function Player(id, spawn_x, spawn_y){
           }
         }
       }
-      else{
+      else{//thats for players
         target = allPlayers[target_id];
         targetData = allPlayers[target_id].data;
-      }//thats for players
+      }
 
       if(frameTime - this.data.lastAttack > (this.data.attackCooldown / this.data.atkSpeed) && target && dist(this.data, targetData)<this.data.equipment.primary.range){
         this.data.lastAttack = frameTime;
@@ -426,7 +424,7 @@ function Player(id, spawn_x, spawn_y){
           var los = calcLineOfSight(this.data.tx, this.data.ty, targetData.tx, targetData.ty);
           for(sId in onlinePlayersData)
             io.to(sId).emit('player-attack-bow', {id: this.data.id, target: los.obstacle});
-          if(!los.isClear)
+          if(!los.isClear)//skip invoking damage functions
             return;
         }
 
@@ -580,19 +578,22 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
     }
     else if(this.type == 1){ //aggressive
       if(this.targetId){//check if target isn't lost
-        if(!allPlayers[this.targetId].data.isVisible){//that only means player is dead. for now.
-          this.targetId = null;
+        if(allPlayers[this.targetId].data.isDead){//check if dead, untarget if true
+          this.targetId = false;
+          this.aggro = false;
+        }
+        else if(!allPlayers[this.targetId].data.isVisible){//check is not invisible
           this.aggro = false;
         }
         else if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, allPlayers[this.targetId].data) > 10){
-          this.targetId = null;
+          this.targetId = false;
           this.aggro = false;    
         }
       }
       else{//no target -> look for target
         for(var sId in onlinePlayersData){
           var id = onlinePlayersData[sId].id;
-          if(!allPlayers[id]) continue;
+          if(!allPlayers[id] || allPlayers[id].data.isDead) continue;
           if(allPlayers[id].data.isVisible && dist(this, allPlayers[id].data) < this.aggroRange && calcLineOfSight(this.tx, this.ty, allPlayers[id].data.tx, allPlayers[id].data.ty).isClear){
             this.aggro = true;
             this.targetId = id;
