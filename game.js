@@ -88,6 +88,10 @@ socket.on('player-attack-bow', function (data){
   if(data.id == player_id) return;
   missiles.push(new Projectile(otherPlayers[data.id].data.tx, otherPlayers[data.id].data.ty, data.target.x, data.target.y, 'arrow_new', 'blood_hit', 'arrow_hit'))
 });
+socket.on('player-teleport', function (data){
+  player1.data.x = data.x;
+  player1.data.y = data.y;
+});
 var server_dataBuffer = [];
 var mobzz = {};
 var gh = 32;

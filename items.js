@@ -12,9 +12,8 @@ Skill.prototype.constructor = Skill;
 function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   Item.call(this, id, name, stackable, quantity, type);
   this.abilities = abilities;
-  console.log(this.abilities[0].value)
   this.cooldown = cooldown;
-  this.lastUseTime = frameTime;
+  this.lastUseTime = new Date().getTime();
   this.ready = false;
   this.equip = function(user, slot) {
   	if(user.data.skills[slot] || slot > 3) return;
