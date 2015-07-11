@@ -29,7 +29,6 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   					}
   					else if(a.valueType == valueType.STATIC){
   						user.data.healthRegen += a.value;
-
   					}
   				}
   				else if(a.effect == skillEffect.DMGBOOST){
@@ -50,15 +49,21 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   				}
   				else if(a.effect == skillEffect.ATKSPEEDBOOST){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.atkSpeedBoost += a.value;
+  						user.data.atkSpeedBoost += user.data.atkSpeedBase * a.value;
   					}
+            else if(a.valueType == valueType.STATIC){
+              user.data.atkSpeedBoost += a.value;
+            }
   				}
   				else if(a.effect == skillEffect.EVASIONBOOST){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.evasion += a.value;
+  						user.data.evasionBoost += user.data.evasionBase * a.value;
   					}
+            else if(a.valueType == valueType.STATIC){
+              user.data.evasionBoost += a.value;
+            }
   				}
-  				else if(a.effect == skillEffect.CRITDMG){//x
+  				else if(a.effect == skillEffect.CRITDMG){
   					if(a.valueType == valueType.PERCENT){
   						user.data.critDamage += user.data.critDamageBase * a.value;
   					}
@@ -66,7 +71,7 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   						user.data.critDamage += a.value;
   					}
   				}
-  				else if(a.effect == skillEffect.CRITCHANCE){//x
+  				else if(a.effect == skillEffect.CRITCHANCE){
   					if(a.valueType == valueType.PERCENT){
   						user.data.critChance += user.data.critChanceBase*a.value;
   					}
@@ -76,6 +81,7 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   				}
   				else if(a.effect == skillEffect.DMGREFLECT){
   					if(a.valueType == valueType.PERCENT){
+              user.data.dmgReflect += user.data.dmgReflectBase*a.value;
   					}
   					else if(a.valueType == valueType.STATIC){
   						user.data.dmgReflect += a.value;
@@ -83,19 +89,36 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   				}
   				else if(a.effect == skillEffect.SPEEDBST){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.speedBoost *= (1 + a.value);
+  						user.data.speedCur += user.data.speedBase*a.value;
   					}
+            else if(a.valueType == valueType.STATIC){
+              user.data.speedCur += a.value;
+            }
   				}
   				else if(a.effect == skillEffect.MAGICIMMUNITY){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.magicImmunity *= (1 + a.value);
+  						user.data.magicImmunity += user.data.magicImmunityBase*a.value;
   					}
+            else if(a.valueType == valueType.STATIC){
+              user.data.magicImmunity += a.value;
+            }
   				}
   				else if(a.effect == skillEffect.PHYSICALIMMUNITY){
   					if(a.valueType == valueType.PERCENT){
-  						user.data.physicalImmunity *= (1 + a.value);
+  						user.data.physicalImmunity += user.data.physicalImmunityBase*a.value;
   					}
+            else if(a.valueType == valueType.STATIC){
+              user.data.physicalImmunity += a.value;
+            }
   				}
+          else if(a.effect == skillEffect.BLOCKCHANCE){
+            if(a.valueType == valueType.PERCENT){
+              user.data.blockChance += user.data.blockChanceBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.blockChance += a.value;
+            }
+          }
   	}
   };
   this.takeOff = function(user, slot) {
@@ -104,74 +127,108 @@ function Skill(id, name, stackable, quantity, type, abilities, cooldown){
   	for(var i=0; i<this.abilities.length; i++){
   		var a = this.abilities[i]
   		if(a.type == skillType.PASSIVE){
-  			if(a.target == skillTarget.SELF)
-  				if(a.effect == skillEffect.HEAL)
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.healthRegen -= user.data.healthRegenBase * a.value;
-  					}
-  					else if(a.valueType == valueType.STATIC){
-  						user.data.healthRegen -= a.value;
-  					}
-  				else if(a.effect == skillEffect.DMGBOOST){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.dmgMod += a.value;
-  					}
-  				}
-  				else if(a.effect == skillEffect.LIFESTEAL){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.lifeSteal += a.value;
-  					}
-  				}
-  				else if(a.effect == skillEffect.ATKSPEEDBOOST){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.atkSpeedBoost *= (1 + a.value);
-  					}
-  				}
-  				else if(a.effect == skillEffect.EVASIONBOOST){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.evasion *= (1 + a.value);
-  					}
-  				}
-  				else if(a.effect == skillEffect.CRITDMG){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.critDamage *= (1 + a.value);
-  					}
-  				}
-  				else if(a.effect == skillEffect.CRITCHANCE){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.critChance -= user.data.critChanceBase*a.value;
-  					}
-  					else if(a.valueType == valueType.STATIC){
-  						user.data.critChance -= a.value;
-
-  					}
-  				}
-  				else if(a.effect == skillEffect.DMGREFLECT){
-  					if(a.valueType == valueType.PERCENT){
-  					}
-  					else if(a.valueType == valueType.STATIC){
-  						user.data.dmgReflect -= a.value;
-  					}
-  				}
-  				else if(a.effect == skillEffect.SPEEDBST){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.speedBoost *= (1 + a.value);
-  					}
-  				}
-  				else if(a.effect == skillEffect.MAGICIMMUNITY){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.magicImmunity *= (1 + a.value);
-  					}
-  				}
-  				else if(a.effect == skillEffect.PHYSICALIMMUNITY){
-  					if(a.valueType == valueType.PERCENT){
-  						user.data.physicalImmunity *= (1 + a.value);
-  					}
-  				}
-  		}
+        if(a.target == skillTarget.SELF){
+          if(a.effect == skillEffect.HEAL){
+            if(a.valueType == valueType.PERCENT){
+              user.data.healthRegen -= user.data.healthRegenBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.healthRegen -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.DMGBOOST){
+            if(a.valueType == valueType.PERCENT){
+              user.data.dmgMod -= user.data.dmgModBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.dmgMod -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.LIFESTEAL){
+            if(a.valueType == valueType.PERCENT){
+              user.data.lifeSteal -= user.data.lifeStealBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.lifeSteal -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.ATKSPEEDBOOST){
+            if(a.valueType == valueType.PERCENT){
+              user.data.atkSpeed -= user.data.atkSpeedBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.atkSpeed -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.EVASIONBOOST){
+            if(a.valueType == valueType.PERCENT){
+              user.data.evasion -= user.data.evasionBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.evasion -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.CRITDMG){
+            if(a.valueType == valueType.PERCENT){
+              user.data.critDamage -= user.data.critDamageBase * a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.critDamage -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.CRITCHANCE){
+            if(a.valueType == valueType.PERCENT){
+              user.data.critChance -= user.data.critChanceBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.critChance -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.DMGREFLECT){
+            if(a.valueType == valueType.PERCENT){
+              user.data.dmgReflect -= user.data.dmgReflectBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.dmgReflect -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.SPEEDBST){
+            if(a.valueType == valueType.PERCENT){
+              user.data.speedCur -= user.data.speedBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.speedCur -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.MAGICIMMUNITY){
+            if(a.valueType == valueType.PERCENT){
+              user.data.magicImmunity -= user.data.magicImmunityBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.magicImmunity -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.PHYSICALIMMUNITY){
+            if(a.valueType == valueType.PERCENT){
+              user.data.physicalImmunity -= user.data.physicalImmunityBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.physicalImmunity -= a.value;
+            }
+          }
+          else if(a.effect == skillEffect.BLOCKCHANCE){
+            if(a.valueType == valueType.PERCENT){
+              user.data.blockChance -= user.data.blockChanceBase*a.value;
+            }
+            else if(a.valueType == valueType.STATIC){
+              user.data.blockChance -= a.value;
+            }
+          }
+      }
+    }
   	}
   	console.log('user: %o', user);
-  };
+};
   this.activate = function() {
   	this.lastUseTime = new Date().getTime();
 

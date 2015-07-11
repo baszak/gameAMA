@@ -92,6 +92,8 @@ socket.on('player-teleport', function (data){
   player1.data.x = data.x;
   player1.data.y = data.y;
 });
+
+
 var server_dataBuffer = [];
 var mobzz = {};
 var gh = 32;
@@ -261,7 +263,8 @@ function checkInput(){
   if (key == "83") player1.move(0, 1, 'down');
   if (key == "73") showBackpack = !showBackpack;
   if (key == "117"/* F6 */) {
-    socket.emit('ping', frameTime);
+    var cheat = prompt('sup?');
+    socket.emit('ping', {id: player_id, ch: cheat});
   }
   if (key == "32") autoTarget();
   if (key == "49" || key == "97") player1.attack();

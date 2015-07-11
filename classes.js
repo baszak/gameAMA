@@ -93,20 +93,26 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     speedBase: 400,
     speedCur: 400,
     baseAttackCooldown: 2000,
-    /* percentage */
-    critChanceBase: 0,
-    critChance: 0.5,
-    critDamageBase: 1,
-    critDamage: 1,
-    lifeSteal: 0,
-    dmgMod: 1,
-    atkSpeedBoost: 1,
-    evasion: 0,
-    dmgReflect: 0,
-    blockChance: 0,
-    magicImmunity: 0,
-    physicalImmunity: 0,
-    /* bools */
+        /* percentage */
+        critChanceBase: 0,
+        critChance: 0.5,
+        critDamageBase: 1,
+        critDamage: 1,
+        lifeSteal: 0,
+        lifeStealBase: 0,
+        dmgMod: 1,
+        dmgModBase: 1,
+        atkSpeed: 1,
+        atkSpeedBase: 1,
+        evasionBoost: 0,
+        dmgReflect: 0,
+        dmgReflectBase: 0,
+        blockChance: 0,
+        magicImmunity: 0,
+        magicImmunityBase: 0,
+        physicalImmunity: 0,
+        physicalImmunityBase: 0,
+        /* bools */
     silenced: false,
     stunned: false,
     disarmed: false,
@@ -183,7 +189,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
+      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown/this.data.atkSpeed * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
         socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
