@@ -104,7 +104,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         dmgModBase: 1,
         atkSpeed: 1,
         atkSpeedBase: 1,
-        evasionBoost: 0,
+        evasion: 0,
         dmgReflect: 0,
         dmgReflectBase: 0,
         blockChance: 0,
@@ -123,6 +123,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         //other shit
     moveValid: 1,
     isVisible: true,
+    isMeditating: false,
     limboState: false,
     dying: false,
     deathTime: frameTime,
@@ -180,7 +181,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
       }
     }
 
-    updateStats(this.data);
+    // updateStats(this.data);//this comes from the server
     if(this.data.experience<0) this.data.experience = 0;
   }
   this.move = function(dx, dy, dir){
@@ -189,13 +190,13 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   }
   this.attack = function(){ //autoattacks with primary hand
     if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown/this.data.atkSpeed * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedMob && dist(this.data, targetedMob.data)<this.data.equipment.primary.range){
-        socket.emit('player-attack', {id: targetedMob.data.id, type: targetedMob.data.type});
+      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown/this.data.atkSpeed * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedUnit && dist(this.data, targetedUnit.data)<this.data.equipment.primary.range){
+        socket.emit('player-attack', {id: targetedUnit.data.id, type: targetedUnit.data.type});
         switch(this.data.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedMob.data.tx, targetedMob.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
+            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedUnit.data.tx, targetedUnit.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
           case 'sword':
-            // missiles.push(new AttackAnimation(targetedMob.data, this.data, this.data.equipment.primary.type));
+            // missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
         }
 
 
@@ -215,6 +216,10 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     this.data.dying = true;
     this.data.limboState = true;
     this.data.isVisible = false;
+  }
+  this.toggleRegen = function(){
+    this.data.isMeditating = !this.data.isMeditating;
+    socket.emit('player-toggle-regen', {});
   }
 	this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.img_right.spriteN;
@@ -314,46 +319,46 @@ function ExperienceBar(){
 }
 
 function ActionBar(){
-  this.img = new Image();
-  this.img.src = 'img/actionbar.png';
-  this.img_01 = new Image();
-  this.img_01.src = 'img/skills/Fireball.jpg';
-  this.img_01_cd = new Image();
-  this.img_01_cd.src = 'img/skills/Fireball_cd.jpg';
-  this.img_border = new Image();
-  this.img_border.src = 'img/skills/48x_grey_border.png';
+
+  this.bar_new = allImages['action_bar_new'];
+  this.hp_full  = allImages['hp_full'];
+  this.mana_full  = allImages['mana_full'];
 
   this.draw = function(ctx){
-    ctx.beginPath();
-    ctx.arc(canvas.width/2 - 280 - 60, canvas.height - 70, 60, 0, 2*Math.PI);  
-    var gradientRed=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
-    gradientRed.addColorStop("0","rgba(0,0,0,0)");
-    gradientRed.addColorStop(Math.max(1 - player1.data.healthCur/player1.data.healthMax - 0.05,0),"rgba(0,0,0,0)");
-    gradientRed.addColorStop(1 - player1.data.healthCur/player1.data.healthMax,"rgba(255,0,0,0.5)");
-    gradientRed.addColorStop(Math.min(1 - player1.data.healthCur/player1.data.healthMax + 0.05,1),"rgba(255,0,0,0.9)");
-    gradientRed.addColorStop("1.0","rgba(255,0,0,0.9)");
-    ctx.fillStyle = gradientRed;
-    ctx.fill();
+    // ctx.beginPath();
+    // ctx.arc(canvas.width/2 - 280 - 60, canvas.height - 70, 60, 0, 2*Math.PI);  
+    // var gradientRed=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
+    // gradientRed.addColorStop("0","rgba(0,0,0,0)");
+    // gradientRed.addColorStop(Math.max(1 - player1.data.healthCur/player1.data.healthMax - 0.05,0),"rgba(0,0,0,0)");
+    // gradientRed.addColorStop(1 - player1.data.healthCur/player1.data.healthMax,"rgba(255,0,0,0.5)");
+    // gradientRed.addColorStop(Math.min(1 - player1.data.healthCur/player1.data.healthMax + 0.05,1),"rgba(255,0,0,0.9)");
+    // gradientRed.addColorStop("1.0","rgba(255,0,0,0.9)");
+    // ctx.fillStyle = gradientRed;
+    // ctx.fill();
     
-    ctx.beginPath();
-    ctx.arc(canvas.width/2 + 270 + 60, canvas.height - 70, 60, 0, 2*Math.PI);
-    var gradientBlue=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
-    gradientBlue.addColorStop("0","rgba(0,0,0,0)");
-    gradientBlue.addColorStop(Math.max(1 - player1.data.manaCur/player1.data.manaMax - 0.05,0),"rgba(0,0,0,0)");
-    gradientBlue.addColorStop(1 - player1.data.manaCur/player1.data.manaMax,"rgba(0,0,255,0.5)");
-    gradientBlue.addColorStop(Math.min(1 - player1.data.manaCur/player1.data.manaMax + 0.05,1),"rgba(0,0,255,0.9)");
-    gradientBlue.addColorStop("1.0","rgba(0,0,255,0.9)");
-    ctx.fillStyle = gradientBlue;
-    ctx.fill();
+    // ctx.beginPath();
+    // ctx.arc(canvas.width/2 + 270 + 60, canvas.height - 70, 60, 0, 2*Math.PI);
+    // var gradientBlue=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
+    // gradientBlue.addColorStop("0","rgba(0,0,0,0)");
+    // gradientBlue.addColorStop(Math.max(1 - player1.data.manaCur/player1.data.manaMax - 0.05,0),"rgba(0,0,0,0)");
+    // gradientBlue.addColorStop(1 - player1.data.manaCur/player1.data.manaMax,"rgba(0,0,255,0.5)");
+    // gradientBlue.addColorStop(Math.min(1 - player1.data.manaCur/player1.data.manaMax + 0.05,1),"rgba(0,0,255,0.9)");
+    // gradientBlue.addColorStop("1.0","rgba(0,0,255,0.9)");
+    // ctx.fillStyle = gradientBlue;
+    // ctx.fill();
     
-    ctx.drawImage(this.img, canvas.width/2-520,canvas.height-140, 1040, 144)
-    ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
+    // ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
     // if(frameTime - player1.data.skills[0].cooldown < 0)
     //   ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
       // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
       /* dont delete those */
-    ctx.drawImage(this.img_border, canvas.width/2-262, canvas.height-59, 38, 38);
+    // ctx.drawImage(this.img_border, canvas.width/2-262, canvas.height-59, 38, 38);
+    ctx.drawImage(this.bar_new, 0 , canvas.height-256, 1024, 256);
+    this.hpPercent = (player1.data.healthCur/player1.data.healthMax)*130;
+    ctx.drawImage(this.hp_full, 0, 0, this.hpPercent, 16, 87 , canvas.height-45, this.hpPercent, 16);
+    this.manaPercent = (player1.data.manaCur/player1.data.manaMax)*130;
+    ctx.drawImage(this.mana_full, 0, 0, this.manaPercent, 16, 87 , canvas.height-22, this.manaPercent, 16, 16);
   }
 }
 

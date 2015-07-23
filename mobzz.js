@@ -43,8 +43,8 @@ function Mob(id, tx, ty, healthMax, healthCur, speed, name){
     popups.push(new numberPopup(this.data.tx, this.data.ty, damage, 'damage', 1200));
   }
   this.die = function(){
-    if(targetedMob && targetedMob.data.id == this.data.id)
-      targetedMob = null;
+    if(targetedUnit && targetedUnit.data.id == this.data.id)
+      targetedUnit = null;
     delete mobzz[this.data.id];
   }
 }

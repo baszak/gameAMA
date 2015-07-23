@@ -33,6 +33,7 @@
       for(var opt in options) {
         if (opt === "title") { div.find(".header_text").html(options[opt]); }
         if (opt === "content") { div.find(".content").append(options[opt]); }
+        // if (opt === "position") { div.find(".position").css(options[opt]); }
       }
     });
     return this;

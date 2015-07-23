@@ -9,7 +9,7 @@
 		<canvas id="game" style=""></canvas>
 		<img id="img2" src="img/gradient_border.png" style="position:absolute; left:0; top:0;">
 	</div>
-	<script src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
+	<script src="node_modules/socket.io-1.3.5.js"></script>
 	<script type="text/javascript" src="jquery-2.1.1.min.js"></script>
 	<script type="text/javascript" src="enums.js"></script>
 	<script type="text/javascript" src="imageRepo.js"></script>
@@ -52,80 +52,84 @@
   $("#win1").changeWindowProp({content: "<div class='slot' size_x=12 size_y=6></div>"});
   
   $("#win3").makeWindow({resizable: false, title: "Welcome!", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='button' value='LOG IN' style='margin:8px;'><br><input type='button' value='CREATE NEW CHARACTER' onclick='popwindow4()' style='margin:0px;'></center>"});
-  function popwindow4(){
-	  $("#win5").makeWindow({resizable: false, title: "Create Character", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='password' placeholder='REPEAT PASSWORD'><input type='button' value='CREATE' id='new_char' style='margin:0px;'></center>"});
+    function popwindow4(){
+	  $("#win5").makeWindow({resizable: false, title: "Create Character", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='password' placeholder='REPEAT PASSWORD'><input type='button' value='CREATE' id='new_char' style='margin:0px;'></center>"})
+	  			.css({top: 200, left: 600});
 	}
 
 	$("#win2").changeWindowProp({content: $("#playereq")});
 	$(".slot").makeContainter();
 
-  $("#item1").makeItem(1,1,$($(".slot")[0]));
-  $("#item2").makeItem(2,3,$($(".slot")[0]));
-  $("#item3").makeItem(2,2,$($(".slot")[0]));
+    $("#item1").makeItem(1,1,$($(".slot")[0]));
+    $("#item2").makeItem(2,3,$($(".slot")[0]));
+    $("#item3").makeItem(2,2,$($(".slot")[0]));
 	$("#item4").makeItem(2,3,$($(".slot")[0]));
-$("#win4").makeWindow({title: "Skills"});
-$("#win4").changeWindowProp({content: "<img src='http://i.ytimg.com/vi/bOzpup-zMZ8/maxresdefault.jpg' id ='map'>"});
-var scale = 1;
-$("#map").parent()[0].onwheel = function(e){
-  var off = $("#map").parent().offset();
-  off.top = e.clientY-off.top;
-  off.left = e.clientX-off.left;
-  var mapoff = {
-   top: off.top + $("#map").parent().scrollTop(),
-   left: off.left + $("#map").parent().scrollLeft()
-  }
-  var oldh = $("#map").height();
-  var oldw = $("#map").width();
-  $("#map").height(Math.max($("#map").height()-e.deltaY, 200));
-  mapoff.top = $("#map").height()*mapoff.top / oldh;
-  mapoff.left = $("#map").width()*mapoff.left / oldw;
-  $("#map").parent().scrollTop(mapoff.top-off.top);
-  $("#map").parent().scrollLeft(mapoff.left-off.left);
-  e.preventDefault();
-  return false;
-};
+	$("#win4").makeWindow({title: "Skills"});
+	$("#win4").changeWindowProp({content: "<img src='http://i.ytimg.com/vi/bOzpup-zMZ8/maxresdefault.jpg' id ='map'>"});
+	var scale = 1;
+	$("#map").parent()[0].onwheel = function(e){
+	  var off = $("#map").parent().offset();
+	  off.top = e.clientY-off.top;
+	  off.left = e.clientX-off.left;
+	  var mapoff = {
+	   top: off.top + $("#map").parent().scrollTop(),
+	   left: off.left + $("#map").parent().scrollLeft()
+	  }
+	  var oldh = $("#map").height();
+	  var oldw = $("#map").width();
+	  $("#map").height(Math.max($("#map").height()-e.deltaY, 200));
+	  mapoff.top = $("#map").height()*mapoff.top / oldh;
+	  mapoff.left = $("#map").width()*mapoff.left / oldw;
+	  $("#map").parent().scrollTop(mapoff.top-off.top);
+	  $("#map").parent().scrollLeft(mapoff.left-off.left);
+	  e.preventDefault();
+	  return false;
+	};
 
 
-var _globalObjectDragged;
-var _globalObjectAnchor;
-$("#map").mousedown(function(e){
-  var div = $(this);
-  _globalObjectDragged = div;
-  _globalObjectAnchor = [e.clientX-div.position().left, e.clientY-div.position().top];
-  e.preventDefault();
-  return false;
-});
+	var _globalObjectDragged;
+	var _globalObjectAnchor;
+	$("#map").mousedown(function(e){
+	  var div = $(this);
+	  _globalObjectDragged = div;
+	  _globalObjectAnchor = [e.clientX-div.position().left, e.clientY-div.position().top];
+	  e.preventDefault();
+	  return false;
+	});
 
-$("#win4").append("<div id='map_cover' class='content' style='background-color:transparent;box-shadow: 0px 0px 50px 20px black  inset;pointer-events:none;'></div>");
+	$("#win4").append("<div id='map_cover' class='content' style='background-color:transparent;box-shadow: 0px 0px 50px 20px black  inset;pointer-events:none;'></div>");
 
 
-$(document).ready(function(){
-  $(document.body).mousemove(function(e) {
-    if(_globalObjectDragged){      
-      _globalObjectDragged.parent().scrollTop(-e.clientY + _globalObjectAnchor[1]);
-      _globalObjectDragged.parent().scrollLeft(-e.clientX + _globalObjectAnchor[0]);
-      _globalObjectDragged.css("cursor","move");
-    }    
-  });
-  $(document.body).mouseup(function(e) {
-    if(_globalObjectDragged){
-      _globalObjectDragged.css("cursor","default");
-      _globalObjectDragged = null;
-    }
-    
-  });
-  $("#c1 img")[0].oncontextmenu = function(e){
-    $(".ctx_menu").css({left: e.clientX, top: e.clientY}).show();
-    e.preventDefault();
-    return false;
-  }
-  $(document.body).click(function(){
-    $(".ctx_menu").hide();
-  });
-  
-  
-  
-});
+	$(document).ready(function(){
+	  $(document.body).mousemove(function(e) {
+	    if(_globalObjectDragged){      
+	      _globalObjectDragged.parent().scrollTop(-e.clientY + _globalObjectAnchor[1]);
+	      _globalObjectDragged.parent().scrollLeft(-e.clientX + _globalObjectAnchor[0]);
+	      _globalObjectDragged.css("cursor","move");
+	    }    
+	  });
+	  $(document.body).mouseup(function(e) {
+	    if(_globalObjectDragged){
+	      _globalObjectDragged.css("cursor","default");
+	      _globalObjectDragged = null;
+	    }
+	    
+	  });
+	  $("#c1 img")[0].oncontextmenu = function(e){
+	    $(".ctx_menu").css({left: e.clientX, top: e.clientY}).show();
+	    e.preventDefault();
+	    return false;
+	  }
+	  $(document.body).click(function(){
+	    $(".ctx_menu").hide();
+	  });
+	});
+	// for(var i=0; i<4; i++)
+	// 	$('#win' + (i+1)).css({ "top": 32*i + "px", "left": "0px" });
+	$('#win1').css({top:0, left: 0});
+	$('#win2').css({top: 0, left: 1315});
+	$('#win4').css({top: 361, left: 1315});
+	$("#win3").css({top: 341, left: 0});
 </script>
 <div style='background-image:url(img/cover.png);position:absolute;left:0;top:0;width:100%;height:100%;z-index:99;display:none;'></div>
 <ul class='ctx_menu'>

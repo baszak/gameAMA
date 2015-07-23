@@ -1,0 +1,398 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "server.js",
+			"settings":
+			{
+				"buffer_size": 30567,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/index.html",
+			"settings":
+			{
+				"buffer_size": 6034,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/resources.js",
+			"settings":
+			{
+				"buffer_size": 154,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "skills.js",
+			"settings":
+			{
+				"buffer_size": 5373,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "utils.js",
+			"settings":
+			{
+				"buffer_size": 7732,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/DELL-Adam/Documents/gameExpress/routes/index.js",
+		"/C/Users/DELL-Adam/Documents/gameExpress/routes/users.js",
+		"/C/Users/DELL-Adam/Documents/gameExpress/app.js",
+		"/C/Users/DELL-Adam/Documents/gameExpress/package.json",
+		"/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/index.html",
+		"/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/utils.js",
+		"/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/game.js",
+		"/C/Users/DELL-Adam/Documents/gameAMA/node_modules/socket.io.js",
+		"/C/Users/DELL-Adam/Documents/gameAMA/.gitignore",
+		"/C/Users/DELL-Adam/AppData/Roaming/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/C/Apache24/htdocs/gameAMA/classes.js",
+		"/C/Apache24/htdocs/gameAMA/index.html",
+		"/C/Apache24/htdocs/gameAMA/game.js",
+		"/C/Apache24/htdocs/gameAMA/game_network.js",
+		"/C/Apache24/htdocs/exp2015/package.json"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"level",
+			"healthCur",
+			"takeDamage",
+			"enemyData",
+			"attackerData",
+			"enemy",
+			"attacker",
+			"player1",
+			"level",
+			"speedCur",
+			"speed",
+			"Speed",
+			"speed",
+			",",
+			":",
+			"sId",
+			"onlinePlayersData[sId]",
+			"calcDamage",
+			"Regen",
+			"regen",
+			"calcDamage",
+			"attacker",
+			"data.",
+			"restoreHp",
+			"heal",
+			"entities",
+			";\n",
+			"buffTimer",
+			"exhausted",
+			"restoreHp",
+			"updateStats",
+			"calcDamage",
+			"attack",
+			"Attack",
+			"attack",
+			"calcD",
+			"atkSpeed",
+			"calcDamage",
+			"speedBoost",
+			"update",
+			"\\"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 4,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "server.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 30567,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								536,
+								536
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/index.html",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6034,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/C/Users/DELL-Adam/Documents/gameExpress/public/javascripts/resources.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 154,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								154,
+								154
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "skills.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5373,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "utils.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7732,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"project": "",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

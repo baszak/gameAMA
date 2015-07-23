@@ -181,6 +181,7 @@ function calcLineOfSight (start_x, start_y, end_x, end_y) {
 function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_name, limboState){
 	this.data = {
 		id: id,
+    type: objType.PLAYER,
 		name: name,
 		level: level,
 		x: pos_x,
@@ -224,7 +225,16 @@ function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedC
     	ctx.drawImage(allImages[img_name], (this.data.x)*gh, (this.data.y)*gh, gh, gh);
       drawHealthBar(this);
     }
+    if(this.isTargeted){
+      ctx.strokeStyle = "rgba(255, 0, 0, 1)";
+      ctx.strokeRect((this.data.x)*gh, (this.data.y)*gh, gh, gh);
+    }
 	}
+  this.takeDamage = function(attackerId, damage) {
+    if(damage>0)
+      entities.newEntity('blood_big', this.data.tx, this.data.ty, 15, 2.5);
+    popups.push(new numberPopup(this.data.tx, this.data.ty, damage, 'damage', 1200));
+  }
   this.die = function(){
     delete otherPlayers[this.data.id];
   }

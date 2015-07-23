@@ -21,14 +21,19 @@ socket.on('data-update', function (data){
       mobzz[id].data.ty = data.mobs[i].ty;
       mobzz[id].data.healthMax = data.mobs[i].healthMax;
       mobzz[id].data.healthCur = data.mobs[i].healthCur;
+      mobzz[id].data.speed = data.mobs[i].speed;
   }
   for(var i in data.players){
     if(player1.data.id == i){
+      player1.data.healthMax = data.players[i].healthMax;
       player1.data.healthCur = data.players[i].healthCur;
+      player1.data.speedCur = data.players[i].speedCur;
     }
     if(!otherPlayers.hasOwnProperty(i))
       continue;
+    otherPlayers[i].data.healthMax = data.players[i].healthMax;
     otherPlayers[i].data.healthCur = data.players[i].healthCur;
+    otherPlayers[i].data.speedCur = data.players[i].speedCur;
   }
 })
 
@@ -51,7 +56,7 @@ socket.on('player-login-failure', function (data){
 });
 socket.on('reconnect', function(){
   socket.emit('player-login-attempt', player_id);
-  statusMessage.showMessage('wolcome back', 3000);
+  statusMessage.showMessage('welcome back', 3000);
 });
 socket.on('send-map-world', function (data){
   map.world = data;
@@ -60,8 +65,8 @@ socket.emit('player-login-attempt', player_id);
 socket.on('player-initiate-current-objects', function(data){
   for(var i in data.mobs)
     mobzz[data.mobs[i].id] = new Mob(data.mobs[i].id, data.mobs[i].tx, data.mobs[i].ty, data.mobs[i].healthMax, data.mobs[i].healthCur, data.mobs[i].speed, data.mobs[i].name);
-  for(var sId in data.players)
-    otherPlayers[data.players[sId].id] = new OtherPlayer(data.players[sId].id, data.players[sId].name, data.players[sId].level, data.players[sId].x, data.players[sId].y, data.players[sId].healthMax , data.players[sId].healthCur , data.players[sId].speedCur, 'green_player');
+  for(var id in data.players)
+    otherPlayers[id] = new OtherPlayer(id, data.players[id].name, data.players[id].level, data.players[id].x, data.players[id].y, data.players[id].healthMax , data.players[id].healthCur , data.players[id].speedCur, 'green_player');
   serverDataInitialized = true;
 });
 socket.on('mob-spawned', function (data){
@@ -69,7 +74,7 @@ socket.on('mob-spawned', function (data){
   missiles.push(new ShortAnimation(data.tx, data.ty, 'spawn_puff'));
 });
 socket.on('player-take-damage', function (data){
-  player1.data.id==data.id ? player1.takeDamage(data) : (otherPlayers[data.id] && otherPlayers[data.id].takeDamage(data));
+  player1.data.id==data.id ? player1.takeDamage(data) : (otherPlayers[data.id] && otherPlayers[data.id].takeDamage(data.id, data.dmg));
 });
 socket.on('mob-take-damage', function (data){
   mobzz[data.id] && mobzz[data.id].takeDamage(data.dmg);
@@ -82,7 +87,9 @@ socket.on('mob-death', function (data){
     mobzz[data].die();
 });
 socket.on('player-death', function (data){
-  alert("You're dead son. Better luck next time.");
+  console.log("You're dead");
+  setTimeout(function(){ location.reload(); }, 3000);
+  // alert("You're dead son. Better luck next time.");
 });
 socket.on('player-attack-bow', function (data){
   if(data.id == player_id) return;
@@ -132,7 +139,7 @@ var experienceBar = new ExperienceBar();
 var webFilter = new FilterManager();
 
 var audio = new AudioManager();
-var targetedMob = null;
+var targetedUnit = null;
 
 var missiles = new Missiles();
 
@@ -140,38 +147,41 @@ var statusMessage = new StatusMessage(canvas);
 // var tooltipMessage = new TooltipMessage(canvas);
 
 function autoTarget(){
-  if(targetedMob) targetedMob.isTargeted = false;
-  targetedMob = mobzz.min(function(e){
+  if(targetedUnit) targetedUnit.isTargeted = false;
+  targetedUnit = mobzz.min(function(e){
     return Math.pow((e.data.x - player1.data.x), 2)+ Math.pow((e.data.y - player1.data.y), 2);
   });  
-  targetedMob && (targetedMob.isTargeted = true);
+  targetedUnit && (targetedUnit.isTargeted = true);
 }
 
 function handleClick(e) {
+  if(event.which == 2 || event.which == 3) return;//return on middle and right click
   mousepos = {x: (e.clientX - canvas.getBoundingClientRect().left), y:(e.clientY - canvas.getBoundingClientRect().top)};
-  if(mousepos.y>430){
-    //this is for now so won't move by clicking on the action bar
+  if(mousepos.y>430) return;
+
+  clientX = Math.floor((mousepos.x - map.x)/gh);
+  clientY = Math.floor((mousepos.y - map.y)/gh);
+  player1.data.moveQ.findPath(player1.data.tx, player1.data.ty, clientX, clientY);
+  
+  for(var i in mobzz){
+    var enemy = mobzz[i];
+    if(Math.floor((mousepos.x - map.x)/gh) == enemy.data.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.data.ty){
+      if(targetedUnit && targetedUnit != enemy)
+        targetedUnit.isTargeted = false;
+      (targetedUnit = enemy).isTargeted = !(targetedUnit.isTargeted);
+      player1.data.moveQ.currentPath = [];
+      return;
+    }
   }
-  else{
-    clientX = Math.floor((mousepos.x - map.x)/gh);
-    clientY = Math.floor((mousepos.y - map.y)/gh);
-    player1.data.moveQ.findPath(player1.data.tx, player1.data.ty, clientX, clientY);
-    // for(var i = mobzz.length; i--;) {
-    //   var enemy = mobzz[i];
-    //   if(Math.floor((mousepos.x - map.x)/gh) == enemy.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.ty){
-    //     if(targetedMob && targetedMob != enemy) targetedMob.isTargeted = false;
-    //       (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
-    //       player1.data.moveQ.currentPath = [];
-    //   }
-    // }
-    for(var i in mobzz){
-      var enemy = mobzz[i];
-      if(Math.floor((mousepos.x - map.x)/gh) == enemy.data.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.data.ty){
-        if(targetedMob && targetedMob != enemy)
-          targetedMob.isTargeted = false;
-        (targetedMob = enemy).isTargeted = !(targetedMob.isTargeted);
-        player1.data.moveQ.currentPath = [];
-      }
+  for(var i in otherPlayers){
+    if(otherPlayers[i].data.id == player1.data.id) continue;
+    var enemy = otherPlayers[i];
+    if(Math.floor((mousepos.x - map.x)/gh) == enemy.data.tx && Math.floor((mousepos.y - map.y)/gh) == enemy.data.ty){
+      if(targetedUnit && targetedUnit != enemy)
+        targetedUnit.isTargeted = false;
+      (targetedUnit = enemy).isTargeted = !(targetedUnit.isTargeted);
+      player1.data.moveQ.currentPath = [];
+      return;
     }
   }
 }
@@ -247,7 +257,7 @@ function update(){
   missiles.update();
   
   statusMessage.update();
-  for(var i = 0; i<popups.length;i++) {popups[i].update();}
+  for(var i = 0; i<popups.length;i++) popups[i].update();
   draw(ctx);
   lastFrame = frameTime;
   requestAnimationFrame(update);
@@ -261,7 +271,8 @@ function checkInput(){
   if (key == "87") player1.move(0, -1, 'up');
   if (key == "68") player1.move(1, 0, 'right');
   if (key == "83") player1.move(0, 1, 'down');
-  if (key == "73") showBackpack = !showBackpack;
+  if (key == "73") showBackpack = !showBackpack;//i
+  if (key == "187"/* = */) player1.toggleRegen();
   if (key == "117"/* F6 */) {
     var cheat = prompt('sup?');
     socket.emit('ping', {id: player_id, ch: cheat});

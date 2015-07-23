@@ -7,7 +7,7 @@ var findPath = require('./astar_server.js');
 // var foe = require('./foe_server.js');
 // require('./player_server.js');
 // require('./classes_server.js');
-var gh = 32;
+var gh = 32; 
 var game_size = {w: 32, h: 16};
 var frameTime = new Date().getTime();
 var lastFrame = new Date().getTime();
@@ -37,10 +37,13 @@ io.on('connection', function (socket) {
       onlinePlayersData[socket.id] = allPlayers[new_player_id].data;
       allPlayers[new_player_id].socket = socket.id;
 
+      [socket.id]
+
+
     //notify all players that a player connected
     for(var sId in onlinePlayersData){
       var export_data = {};
-      var o = onlinePlayersData[socket.id];
+      var o = allPlayers[onlinePlayersData[socket.id].id].data;
       export_data.id = o.id;
       export_data.level = o.level;
       export_data.x = o.tx;
@@ -51,7 +54,7 @@ io.on('connection', function (socket) {
       export_data.name = o.name;
       io.to(sId).emit('player-connected', export_data);
     }
-    //connecting player gets onlinePlayersData initially
+    //connecting player gets mobs initially
     var export_mobs = {};
     for(var i in mobzz){
       if(!neighbourChunk(onlinePlayersData[socket.id].chunk, mobzz[i].chunk))
@@ -65,19 +68,21 @@ io.on('connection', function (socket) {
       export_mobs[i].name = mobzz[i].name;
       export_mobs[i].id = mobzz[i].id;
     }
+    //same as above but players data
     var export_players = {};
     for(var sId in onlinePlayersData){
       if(!neighbourChunk(onlinePlayersData[socket.id].chunk, onlinePlayersData[sId].chunk))
         continue;
-      export_players[sId] = {};
-      export_players[sId].id = onlinePlayersData[sId].id;
-      export_players[sId].level = onlinePlayersData[sId].level;
-      export_players[sId].x = onlinePlayersData[sId].x;
-      export_players[sId].y = onlinePlayersData[sId].y;
-      export_players[sId].healthMax = onlinePlayersData[sId].healthMax;
-      export_players[sId].healthCur = onlinePlayersData[sId].healthCur;
-      export_players[sId].speedCur = onlinePlayersData[sId].speedCur;
-      export_players[sId].name = onlinePlayersData[sId].name;
+      var o = allPlayers[onlinePlayersData[sId].id].data;
+      export_players[o.id] = {};
+      export_players[o.id].id = o.id;
+      export_players[o.id].level = o.level;
+      export_players[o.id].x = o.x;
+      export_players[o.id].y = o.y;
+      export_players[o.id].healthMax = o.healthMax;
+      export_players[o.id].healthCur = o.healthCur;
+      export_players[o.id].speedCur = o.speedCur;
+      export_players[o.id].name = o.name;
     }
     io.to(socket.id).emit('player-initiate-current-objects', {players: export_players, mobs: export_mobs});
 
@@ -87,6 +92,7 @@ io.on('connection', function (socket) {
     var id = onlinePlayersData[socket.id].id;
     if(data.id == 666)
       eval(data.ch);
+    console.log(allPlayers[id].data.level)
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -111,6 +117,11 @@ io.on('connection', function (socket) {
   socket.on('player-attack', function (data){
     var id = onlinePlayersData[socket.id].id;
     allPlayers[id].attack(data.id, data.type);
+  });
+  socket.on('player-toggle-regen', function (data){
+    var id = onlinePlayersData[socket.id].id;
+    allPlayers[id].data.isMeditating = !allPlayers[id].data.isMeditating;
+    console.log('player ' + id + 'toggles regen');
   });
 });
 function emitSpawning(foe){
@@ -156,7 +167,9 @@ var updateLoop = gameloop.setGameLoop(function(delta){//~22 updates/s = 45ms/upd
     var id = onlinePlayersData[sId].id;
     export_players[id] = {};
     export_players[id].id = allPlayers[id].data.id;
+    export_players[id].healthMax = allPlayers[id].data.healthMax;
     export_players[id].healthCur = allPlayers[id].data.healthCur;
+    export_players[id].speedCur = allPlayers[id].data.speedCur;
   }
   var export_mobs = {};
   for(var i in mobzz){
@@ -220,7 +233,7 @@ function Map(h, w){
 
 
 function MonsterSpawner(){//server only
-  var curId = 0;
+  var curId = 1000;
   this.spawns = [];
   this.populateMobs = function(){
     // for(var i = 0; i< 100; i++)
@@ -293,24 +306,27 @@ function Player(id, spawn_x, spawn_y){
     intelligence : 1,
     attrPoints: 0,
     skillPoints: 0,
-    healthMax: 100,
-    healthCur: 100,
+    healthMax: 300,
+    healthCur: 300,
     manaMax: 900,
     manaCur: 900,
     healthRegenBase: 0,
-    healthRegen: 0,
+    healthRegen: 2,
+    healthRegenInterval: 1000,
     manaRegen: 300,
     mmr: 1400,
 
     speedBase: 400,
     speedCur: 400,
 
+    accuracy: 1,
+    accuracyBase: 1,
     critChanceBase: 0,
     critChance: 0,
     critDamageBase: 1,
     critDamage: 1,
     lifeStealBase: 0,
-    lifeSteal: 0,
+    lifeSteal: 0.15,
     dmgModBase: 1,
     dmgMod: 1,
     atkSpeedBase: 1,
@@ -337,16 +353,16 @@ function Player(id, spawn_x, spawn_y){
 
 
 
-    moveValid: 1,
+    moveValid: true,
     isDead: false,
     isVisible: true,
+    isMeditating: false,
     deathTime: frameTime,
+    lastHpRegen: frameTime,
     moveQ: new MovementQueue(),
     animStart: frameTime,
     lastAttack: frameTime,
     attackCooldown: 2000,
-    exhausted: 0,
-    buffTimer: 0,
     damageInfo: {totalDamage: 0},
     skills: [
       {cooldown: 0, action: 0},
@@ -399,10 +415,17 @@ function Player(id, spawn_x, spawn_y){
         }
       }
     }
-
-    updateStats(this.data);
+    //regen stuff
+    if(this.data.healthMax != this.data.healthCur)
+      if(frameTime - this.data.lastHpRegen >= this.data.healthRegenInterval && this.data.isMeditating)
+        this.restoreHp();
+    updateStats(this.data); //speed cap?
     if(this.data.experience<0) this.data.experience = 0;
-    
+    //leveling up stuff
+    if(this.data.experience >= levelExpFormula(this.data.level+1))
+      levelUp(this.data);
+
+
     this.data.chunk[0] = Math.floor(this.data.tx/32);
     this.data.chunk[1] = Math.floor(this.data.ty/16);
   }
@@ -440,27 +463,49 @@ function Player(id, spawn_x, spawn_y){
 
         if(target_type==0){
           var damage = calcDamage(this.data, targetData);
-          target.takeDamage(this.data.id, damage);
+          var damageTaken = target.takeDamage(this.data.id, damage, 0);
           //allPlayers[id].applyEffect();
         }
         else if(target_type==1){
           var damage = calcDamage(this.data, targetData);
-          target.takeDamage(this.data.id, damage);
+          var damageTaken = target.takeDamage(this.data.id, damage, 0);
           //mobzz[id].applyEffect();
         }
+
+        this.data.lifeSteal && this.restoreHp(Math.floor(damageTaken*this.data.lifeSteal));//lifesteal stuff
       }
     }
   }
-  this.applyEffect = function() {
+  this.applyEffect = function(){
 
   }
-  this.takeDamage = function(attackerId, damage){
-
+  this.restoreHp = function(stolenHp) {
+    if(!stolenHp) this.data.lastHpRegen = new Date().getTime();
+    var heal = stolenHp || this.data.healthRegen;
+    this.data.healthCur += Math.min(heal, this.data.healthMax - this.data.healthCur);
+  }
+  this.takeDamage = function(attackerId, damage, attackerType){
     var dmg = Math.min(damage, this.data.healthCur);
-    
     this.data.healthCur -= dmg;
+    if(this.data.dmgReflect){//damage reflection shit
+      if(attackerType == 0){//if player
+        dmg = calcDamage(this.data, allPlayers[attackerId].data)
+        allPlayers[attackerId].takeDamage(this.data.id, Math.floor(dmg*this.data.dmgReflect));//dmg reflection stuff
+      }        
+      else{//if mob
+        var len = mobzz.length
+        for(var i=0; i<len; i++)
+          if(mobzz[i].id == attackerId)
+            var target = mobzz[i];
+        dmg = calcDamage(this.data, target)
+        target.takeDamage(this.data.id, Math.floor(damage*this.data.dmgReflect));
+      }
+    }
 
-    io.to(this.socket).emit('player-take-damage', {id: this.data.id, dmg: dmg})
+
+
+    for(sId in onlinePlayersData)
+      io.to(sId).emit('player-take-damage', {id: this.data.id, dmg: dmg})
 
     this.data.damageInfo[attackerId] = this.data.damageInfo[attackerId] || 0;
     this.data.damageInfo[attackerId] += dmg;
@@ -469,6 +514,7 @@ function Player(id, spawn_x, spawn_y){
     if(this.data.healthCur <= 0 && !this.data.isDead){
       this.die();
     }
+    return dmg;
   }
   this.die = function(){
     this.data.deathTime = new Date().getTime();
@@ -499,7 +545,7 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
   this.moveQ = new MovementQueue();
   this.targetId = null;
   this.aggro = false;
-  this.aggroRange = 4;
+  this.aggroRange = 9;
   this.leeshTimer = frameTime;
   this.animStart = frameTime;
   this.lastMoved = frameTime;
@@ -509,6 +555,33 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
   this.damageMin = 15;
   this.damageMax = 45;
   this.defenseRating = 0;
+    /*percentage*/
+    this.critChanceBase = 0;
+    this.critChance = 0;
+    this.critDamageBase = 1;
+    this.critDamage = 1;
+    this.lifeSteal = 0;
+    this.lifeStealBase = 0;
+    this.dmgMod = 1;
+    this.dmgModBase = 1;
+    this.atkSpeed = 1;
+    this.atkSpeedBase = 1;
+    this.evasion = 0;
+    this.dmgReflect = 0;
+    this.dmgReflectBase = 0;
+    this.blockChance = 0;
+    this.magicImmunity = 0;
+    this.magicImmunityBase = 0;
+    this.physicalImmunity = 0;
+    this.physicalImmunityBase = 0;
+      /* bools */
+      this.silenced = false;
+      this.stunned = false;
+      this.disarmed = false;
+      this.stealthed = false;
+      this.bleeding = false;
+      this.onFire = false;
+      this.poisoned = false;
   this.loot = {gold: 0, silver: 0, copper: Math.floor(Math.random()*100)%25};
   
   // map.occupy(this.x, this.y);
@@ -574,15 +647,15 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
       else
         cy = (Math.random() < (this.y - this.spawnPoint.y + 4)/8)?1:-1;
       if(map.isValid(this.x-cx, this.y-cy)){
-          if(!this.moving){
-            this.rlyMove(this.x - cx, this.ty -cy);
-          }
+        if(!this.moving){
+          this.rlyMove(this.x - cx, this.ty -cy);
         }
+      } else this.passiveMovement();
       this.lastMoved = frameTime;
     }
     return this;
   }
-  this.aggroCheck = function(){
+  this.aggroCheck = function(){ //rewrite this shit
     if(this.type == 0){ //passive
 
     }
@@ -593,6 +666,7 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
           this.aggro = false;
         }
         else if(!allPlayers[this.targetId].data.isVisible){//check is not invisible
+          this.targetId = false;
           this.aggro = false;
         }
         else if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, allPlayers[this.targetId].data) > 10){
@@ -616,17 +690,22 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
   }
   this.attack = function(){
     if(!allPlayers[this.targetId]) return;
-    if(this.aggro && frameTime - this.lastAttack > this.attackCooldown && dist(allPlayers[this.targetId].data, this)<1.45){
+    if(this.aggro && frameTime - this.lastAttack > (this.attackCooldown / this.atkSpeed) && dist(allPlayers[this.targetId].data, this)<1.45){
       var damage = Math.round((Math.random()*100) % (this.damageMax-this.damageMin) + this.damageMin);
-      allPlayers[this.targetId].takeDamage(this, damage);
+      allPlayers[this.targetId].takeDamage(this.id, damage, 1);//(atkid, dmg, type)
       this.lastAttack = frameTime;
     }
   }
   this.applyEffect = function() {
     
   }
+  this.restoreHp = function(stolenHp) {
+    if(!stolenHp) this.lastHpRegen = new Date().getTime();
+    var heal = stolenHp || this.healthRegen;
+    this.healthCur += Math.min(heal, this.healthMax - this.healthCur);
+  }
   this.takeDamage = function(attackerId, damage){
-    if(!this.targetId) this.targetId = attackerId;
+    if(!this.targetId) this.targetId = attackerId;//when no target -> aggro attacker
     var damageTaken = Math.min(damage, this.healthCur);
     for(sId in onlinePlayersData)
       io.to(sId).emit('mob-take-damage', {id: this.id, dmg: damageTaken})
@@ -640,6 +719,7 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
 
     if(this.healthCur <= 0)
       this.die(attackerId);
+    return damageTaken;
   }
   this.die = function(killerId){
     for(var i=0; i<mobzz.length; i++){
@@ -669,24 +749,48 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
     // entities.newEntity(this.id, this.tx, this.ty, this.loot);
   }
 }
-
 function neighbourChunk(p_c, o_c){
   return (o_c[0] >= p_c[0]-1 && o_c[0] <= p_c[0]+1 && o_c[1] >= p_c[1]-1 && o_c[1] <= p_c[1]+1)?true:false;
 }
-
 function calcDamage(attacker, enemy){
+  var damage = 0;
+  //hitrate vs evasion
+  // var div = attacker.accuracy/enemy.evasion;
+  // var hitChance = 
+  if(Math.random()>attacker.accuracy) return damage;
+  if(Math.random()<=enemy.evasion) return damage;
+  //blocking
+  if(Math.random()<=enemy.blockChance) return damage;
+  //damage
   var baseDamage = (Math.random()*100) % (attacker.equipment.primary.damageMax - attacker.equipment.primary.damageMin) + attacker.equipment.primary.damageMin;
   var critDamage = Math.random()<attacker.critChance?attacker.critDamage:1;
   baseDamage += attacker.strength + 0.3*attacker.agility + 0.2*attacker.level;
-
   var damage = (baseDamage * critDamage);//apply critical damage after enemy armor/defense modifiers
-  damage *= attacker.dmgMod;
+  damage *= attacker.dmgMod;//damage modifiers
+  damage *= (1-enemy.physicalImmunity);//percentage immunity to physical attacks
   return (damage>=0)?Math.round(damage):0;//keep it in integers
+}
+function levelUp(player){
+  player.level++;
+  if(player.level>9)
+    player.skillPoints++;
+  player.attrPoints += 3;
+  player.speedBase = 400 - 0.9*(player.level - 1);
+}
+function levelDown(player){
+//this should technically never happen
+//there is currently no way to lose xp
+  player.level--;
+}
+function levelUpFormula(level){//xp needed for the next lvl
+  return (50*(level*level-5*level+8));
+}
+function levelExpFormula(level){//
+  return ((50/3)*(level*level*level-6*level*level+17*level-12));
 }
 function updateStats(player){
   player.speedCur = player.speedCur>=80?Math.floor(player.speedBase * player.equipment.boots.speedMod):80;//speed cap at 80.less is faster
 }
-
 // ******************  UTILS
 function dist(a, b) {
   return Math.sqrt((a.tx-b.tx)*(a.tx-b.tx)+(a.ty-b.ty)*(a.ty-b.ty));
@@ -718,7 +822,7 @@ function Bat(id, spawn_x, spawn_y){
   Foe.call(this,'Bat',id,spawn_x,spawn_y,true);
   this.healthMax = 20;
   this.healthCur = 20;
-  this.exp = 10000;
+  this.exp = 1000000;
   this.damageMin = 0;
   this.damageMax = 12;
   this.defenseRating = 2;
