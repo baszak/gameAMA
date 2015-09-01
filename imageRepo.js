@@ -20,9 +20,9 @@ var urlDict = {
   'blood_small': { src: 'img/blood_spatter_small.png', spriteX: 32, spriteY: 32, spriteN: 8},
   'green_player': {src: 'img/knight_green.png'},
   'red_player': {src: 'img/knight.png', spriteX: 16, spriteY: 16, spriteN: 1},
-  'sword': {src: 'img/slash_sword.png', spriteX: 25, spriteY: 18, spriteN: 3},
-  'big_sword': {src: 'img/slash_big_sword.png', spriteX: 24, spriteY: 72, spriteN: 3},
-  'big_sword_bloody': {src: 'img/slash_big_sword_bloody.png', spriteX: 24, spriteY: 72, spriteN: 3},
+  'sword_slash': {src: 'img/slash_sword.png', spriteX: 25, spriteY: 18, spriteN: 3},
+  'big_sword_slash': {src: 'img/slash_big_sword.png', spriteX: 24, spriteY: 72, spriteN: 3},
+  'big_sword_bloody_slash': {src: 'img/slash_big_sword_bloody.png', spriteX: 24, spriteY: 72, spriteN: 3},
   'arrow': {src: 'img/items/arrow.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'explosion': {src: 'img/explo.png', spriteX: 84, spriteY: 84, spriteN: 7},
   'arrow_hit': {src: 'img/arrow_hit.png', spriteX: 32, spriteY: 32, spriteN: 7},
@@ -36,9 +36,17 @@ var urlDict = {
   'skill_fireball': {src: 'img/skills/Fireball.jpg', spriteX: 32, spriteY: 32, spriteN: 1},
   'skill_fireball_cd': {src: 'img/skills/Fireball_cd.jpg', spriteX: 32, spriteY: 32, spriteN: 1},
   'stomp': {src: 'img/skills/stomp.png', spriteX: 96, spriteY: 96, spriteN: 1, offsetX: 32, offsetY: 32},
+  'tp_static': {src: 'img/tp_static.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'action_bar_new': {src: 'img/actionbar/a_bar_new.png', spriteX: 1024, spriteY: 256, spriteN: 1},
   'hp_full': {src: 'img/actionbar/hp_bar_full.png', spriteX: 130, spriteY: 16, spriteN: 1},
-  'mana_full': {src: 'img/actionbar/mana_bar_full.png', spriteX: 130, spriteY: 16, spriteN: 1}
+  'mana_full': {src: 'img/actionbar/mana_bar_full.png', spriteX: 130, spriteY: 16, spriteN: 1},
+
+  //SKILLS
+  'skill_sword': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'skill_sword_cd': {src: 'img/skills/skill_tiles/skill_sword_cd.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'skill_bow': {src: 'img/skills/skill_tiles/skill_bow.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'skill_bleeding': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'skill_heal': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1}
 }
 var totalImageCount = 0;
 for(i in urlDict) totalImageCount++;

@@ -146,6 +146,16 @@ function drawHealthBar(obj){
   ctx.strokeStyle = '#000';
   ctx.strokeRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
 }
+function teleportManager(){
+  this.teleportList = [];
+  this.teleportList[0] = {x: 34, y: 12};
+  this.teleportList[1] = {x: 34, y: 18};
+  this.draw = function(ctx){
+    for(var i = 0; i<this.teleportList.length; i++){
+      ctx.drawImage(allImages['tp_static'], this.teleportList[i].x*gh, this.teleportList[i].y*gh, 32, 32);
+    }
+  }
+}
 function calcLineOfSight (start_x, start_y, end_x, end_y) {
   var coordinatesArray = [];
   var x1 = start_x;

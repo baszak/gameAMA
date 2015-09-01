@@ -92,7 +92,6 @@ io.on('connection', function (socket) {
     var id = onlinePlayersData[socket.id].id;
     if(data.id == 666)
       eval(data.ch);
-    console.log(allPlayers[id].data.level)
   });
   socket.on('player-input-move', function (data){
     if(onlinePlayersData.hasOwnProperty(socket.id)){//i shouldn't have to check that
@@ -351,8 +350,7 @@ function Player(id, spawn_x, spawn_y){
     onFire: false,
     poisoned: false,
 
-
-
+    /*others*/
     moveValid: true,
     isDead: false,
     isVisible: true,
@@ -370,7 +368,7 @@ function Player(id, spawn_x, spawn_y){
       {cooldown: 0, action: 0},
       {cooldown: 0, action: 0}
     ],
-    equipment: {  primary: {damageMin: 5, damageMax: 10, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "bow", range: 8*1.45},// o()XXXX[{::::::::::::::>
+    equipment: {  primary: {damageMin: 5, damageMax: 10, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
                         secondary: {damageMin: 1, damageMax: 3, damageMod: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                         body: {},
                         legs: {},
@@ -524,6 +522,7 @@ function Player(id, spawn_x, spawn_y){
   }
 }
 function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check for player and other mobs positions regarding collisions
+  /*basic*/
   this.name = name;
   this.id = id;
   this.x = spawn_x || 10;
@@ -555,33 +554,34 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
   this.damageMin = 15;
   this.damageMax = 45;
   this.defenseRating = 0;
-    /*percentage*/
-    this.critChanceBase = 0;
-    this.critChance = 0;
-    this.critDamageBase = 1;
-    this.critDamage = 1;
-    this.lifeSteal = 0;
-    this.lifeStealBase = 0;
-    this.dmgMod = 1;
-    this.dmgModBase = 1;
-    this.atkSpeed = 1;
-    this.atkSpeedBase = 1;
-    this.evasion = 0;
-    this.dmgReflect = 0;
-    this.dmgReflectBase = 0;
-    this.blockChance = 0;
-    this.magicImmunity = 0;
-    this.magicImmunityBase = 0;
-    this.physicalImmunity = 0;
-    this.physicalImmunityBase = 0;
-      /* bools */
-      this.silenced = false;
-      this.stunned = false;
-      this.disarmed = false;
-      this.stealthed = false;
-      this.bleeding = false;
-      this.onFire = false;
-      this.poisoned = false;
+  /*percentage*/
+  this.critChanceBase = 0;
+  this.critChance = 0;
+  this.critDamageBase = 1;
+  this.critDamage = 1;
+  this.lifeSteal = 0;
+  this.lifeStealBase = 0;
+  this.dmgMod = 1;
+  this.dmgModBase = 1;
+  this.atkSpeed = 1;
+  this.atkSpeedBase = 1;
+  this.evasion = 0;
+  this.dmgReflect = 0;
+  this.dmgReflectBase = 0;
+  this.blockChance = 0;
+  this.magicImmunity = 0;
+  this.magicImmunityBase = 0;
+  this.physicalImmunity = 0;
+  this.physicalImmunityBase = 0;
+  /* bools */
+  this.silenced = false;
+  this.stunned = false;
+  this.disarmed = false;
+  this.stealthed = false;
+  this.bleeding = false;
+  this.onFire = false;
+  this.poisoned = false;
+  /*others*/
   this.loot = {gold: 0, silver: 0, copper: Math.floor(Math.random()*100)%25};
   
   // map.occupy(this.x, this.y);
@@ -664,14 +664,17 @@ function Foe(name, id, spawn_x, spawn_y, mobile){//need to make separate check f
         if(allPlayers[this.targetId].data.isDead){//check if dead, untarget if true
           this.targetId = false;
           this.aggro = false;
+          return;
         }
-        else if(!allPlayers[this.targetId].data.isVisible){//check is not invisible
+        if(!allPlayers[this.targetId].data.isVisible){//check is not invisible
           this.targetId = false;
           this.aggro = false;
+          return;
         }
-        else if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, allPlayers[this.targetId].data) > 10){
+        if(frameTime - this.leeshTimer > 5000 && dist(this.spawnPoint, allPlayers[this.targetId].data) > 10){
           this.targetId = false;
-          this.aggro = false;    
+          this.aggro = false;
+          return;    
         }
       }
       else{//no target -> look for target
@@ -917,6 +920,8 @@ function teleportManager(){
   };
   this.populateTeleports = function() {
     this.newTeleport(30, 6, 30, 60);
+    this.newTeleport(34, 12, 37, 17);
+    this.newTeleport(34, 18, 2, 4);
   };
   this.update = function() {
     for(sId in onlinePlayersData){

@@ -98,6 +98,11 @@ socket.on('player-attack-bow', function (data){
 socket.on('player-teleport', function (data){
   player1.data.x = data.x;
   player1.data.y = data.y;
+  player1.data.tx = data.x;
+  player1.data.ty = data.y;
+  player1.data.ax = 0;
+  player1.data.ay = 0;
+  player1.data.moving = false;
 });
 
 
@@ -137,6 +142,7 @@ var popups = [];
 var actionBar = new ActionBar();
 var experienceBar = new ExperienceBar();
 var webFilter = new FilterManager();
+// var teleports = new teleportManager();
 
 var audio = new AudioManager();
 var targetedUnit = null;
@@ -195,7 +201,7 @@ function draw(ctx){
   ctx.fillRect(Math.floor(mousepos.x/gh)*gh,Math.floor(mousepos.y/gh)*gh,gh,gh);
   ctx.translate(map.x, map.y);
 
-
+  // teleports.draw(ctx);
 
   player1.draw(ctx);
   for(var i in otherPlayers) otherPlayers[i].draw(ctx);

@@ -135,7 +135,7 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
     damageInfo: {totalDamage: 0},
     skills: [],
 
-    equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "bow", range: 8*1.45},// o()XXXX[{::::::::::::::>
+    equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
                   secondary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
                   body: {},
                   legs: {},
@@ -195,8 +195,13 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
         switch(this.data.equipment.primary.type){
           case 'bow':
             missiles.push(new Projectile(this.data.tx, this.data.ty, targetedUnit.data.tx, targetedUnit.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
+            break;
           case 'sword':
-            // missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
+            missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
+            break;
+          case 'big_sword':
+          missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
+          break;
         }
 
 
@@ -323,36 +328,15 @@ function ActionBar(){
   this.bar_new = allImages['action_bar_new'];
   this.hp_full  = allImages['hp_full'];
   this.mana_full  = allImages['mana_full'];
+  this.skill1 = allImages['skill_' + player1.data.equipment.primary.type];
+  this.skill1_cd = allImages['skill_' + player1.data.equipment.primary.type + '_cd'] || this.skill1;
 
   this.draw = function(ctx){
-    // ctx.beginPath();
-    // ctx.arc(canvas.width/2 - 280 - 60, canvas.height - 70, 60, 0, 2*Math.PI);  
-    // var gradientRed=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
-    // gradientRed.addColorStop("0","rgba(0,0,0,0)");
-    // gradientRed.addColorStop(Math.max(1 - player1.data.healthCur/player1.data.healthMax - 0.05,0),"rgba(0,0,0,0)");
-    // gradientRed.addColorStop(1 - player1.data.healthCur/player1.data.healthMax,"rgba(255,0,0,0.5)");
-    // gradientRed.addColorStop(Math.min(1 - player1.data.healthCur/player1.data.healthMax + 0.05,1),"rgba(255,0,0,0.9)");
-    // gradientRed.addColorStop("1.0","rgba(255,0,0,0.9)");
-    // ctx.fillStyle = gradientRed;
-    // ctx.fill();
-    
-    // ctx.beginPath();
-    // ctx.arc(canvas.width/2 + 270 + 60, canvas.height - 70, 60, 0, 2*Math.PI);
-    // var gradientBlue=ctx.createLinearGradient(0,canvas.height - 65 - 60,0,canvas.height-15);
-    // gradientBlue.addColorStop("0","rgba(0,0,0,0)");
-    // gradientBlue.addColorStop(Math.max(1 - player1.data.manaCur/player1.data.manaMax - 0.05,0),"rgba(0,0,0,0)");
-    // gradientBlue.addColorStop(1 - player1.data.manaCur/player1.data.manaMax,"rgba(0,0,255,0.5)");
-    // gradientBlue.addColorStop(Math.min(1 - player1.data.manaCur/player1.data.manaMax + 0.05,1),"rgba(0,0,255,0.9)");
-    // gradientBlue.addColorStop("1.0","rgba(0,0,255,0.9)");
-    // ctx.fillStyle = gradientBlue;
-    // ctx.fill();
-    
-    // ctx.drawImage(this.img_01, canvas.width/2-262, canvas.height-59, 38, 38);
-    // if(frameTime - player1.data.skills[0].cooldown < 0)
-    //   ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
-      // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
-      // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
-      /* dont delete those */
+    ctx.drawImage(this.skill1, 0 , canvas.height-50, this.skill1.spriteX, this.skill1.spriteY);
+    // ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
+    // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
+    // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
+    //dont delete those
     // ctx.drawImage(this.img_border, canvas.width/2-262, canvas.height-59, 38, 38);
     ctx.drawImage(this.bar_new, 0 , canvas.height-256, 1024, 256);
     this.hpPercent = (player1.data.healthCur/player1.data.healthMax)*130;
@@ -471,33 +455,25 @@ function MonsterSpawner(){//server only
     }
   }
 }
-function AttackAnimation(target, caller, type){//add 
+function AttackAnimation(target, caller, type){
   this.x = caller.x*gh + gh/2 + (target.x - caller.x)*gh/4*3;
   this.y = caller.y*gh + gh/2 + (target.y - caller.y)*gh/4*3;
   this.angle = Math.atan2(target.y-caller.y,target.x-caller.x);
   this.animStart = frameTime;
   this.animationSpeed = 60;
   this.altSprite = Math.random()>0.5?false:true;
-  this.type = type;
+  this.type = type + '_slash';
   this.update = function(){
     this.animationFrame = Math.floor((frameTime - this.animStart) / this.animationSpeed);
     if(this.animationFrame > allImages[this.type].spriteN) delete missiles[this.id];
   }
   this.draw = function(ctx){
     switch(this.type){
-      case 'sword':
+      case 'sword_slash':
         ctx.drawRotatedAnim(allImages[this.type], this.animationFrame*allImages[this.type].spriteX, 0, allImages[this.type].spriteX, allImages[this.type].spriteY, this.x, this.y, this.angle, 1.6);
         break;
-      case 'short_sword':
-        ctx.drawRotatedAnim(this.img_sword, this.animationFrame*25, 0, 25, 18, this.x, this.y, this.angle, 1);
-        break;
-      case 'big_sword':
-        if(this.altSprite){
-          //this one is broken --- ???
-          ctx.drawRotatedAnim(allImages[this.type], this.animationFrame*allImages[this.type].spriteX, 0, allImages[this.type].spriteX, allImages[this.type].spriteY, this.x, this.y, this.angle, 0.7);
-        }
-        else
-          ctx.drawRotatedAnim(allImages[this.type], allImages[this.type].spriteX*(allImages[this.type].spriteN) + this.animationFrame*allImages[this.type].spriteX, 0, allImages[this.type].spriteX, allImages[this.type].spriteY, this.x, this.y, this.angle, 0.7);
+      case 'big_sword_slash':
+        ctx.drawRotatedAnim(allImages[this.type], this.animationFrame*allImages[this.type].spriteX, 0, allImages[this.type].spriteX, allImages[this.type].spriteY, this.x, this.y, this.angle, 0.7);
         break;
     }
   }
