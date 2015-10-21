@@ -190,7 +190,7 @@ function calcLineOfSight (start_x, start_y, end_x, end_y) {
 }
 function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_name, limboState){
 	this.id = id;
-  this.type = objType.PLAYER;
+  this.type = enums.objType.PLAYER;
 	this.name = name;
 	this.level = level;
 	this.x = pos_x;
@@ -252,14 +252,12 @@ function Inventory(player){
   this.x = this.div.attr("size_x");
   this.y = this.div.attr("size_y");
   this.populate = function(container) {
-    while (this.div[0].firstChild) {
+    while (this.div[0].firstChild)
     this.div[0].removeChild(this.div[0].firstChild);
-  }
     var item = 0;
     var newChild = 0;
     for(var i=0; i< this.x; i++){
       for(var j=0; j< this.y; j++){
-        console.log(container[i][j])
         item = container[i][j];
         if(item){
           newChild = document.createElement('img');

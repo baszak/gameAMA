@@ -2,7 +2,7 @@ function Mob(id, tx, ty, healthMax, healthCur, speed, name){
   this.img = allImages[name] || allImages['placeholder'];
     this.id = id;
     this.name = name;
-    this.type = objType.MOB;
+    this.type = enums.objType.MOB;
     this.x = tx;
     this.y = ty;
     this.tx = tx;

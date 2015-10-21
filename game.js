@@ -19,21 +19,33 @@ var mousepos = {x:0, y:0};
 var otherPlayers = {};
 var statusMessage = new StatusMessage(canvas);
 
+var entities;
+var popups;
+
+var actionBar;
+var experienceBar;
+var webFilter;
+
+var audio;
+var targetedUnit;
+
+var missiles;
+
+
 loadshit = function(){
 
-  var entities = new EntityManager();
-  var popups = [];
+  entities = new EntityManager();
+  popups = [];
 
-  var actionBar = new ActionBar();
-  var experienceBar = new ExperienceBar();
-  var webFilter = new FilterManager();
+  actionBar = new ActionBar();
+  experienceBar = new ExperienceBar();
+  webFilter = new FilterManager();
 
-  var audio = new AudioManager();
-  var targetedUnit = null;
+  audio = new AudioManager();
+  targetedUnit = null;
 
-  var missiles = new Missiles();
-
-  // var tooltipMessage = new TooltipMessage(canvas);
+  missiles = new Missiles();
+  requestAnimationFrame(update);
 }
 
 
@@ -45,7 +57,6 @@ loadshit = function(){
 socket.on('load-player', function(data) {
   player1 = new Player(data.id, data.x, data.y, data.level, data.experience, data.name, data.healthMax, data.healthCur, data.manaMax, data.manaCur, data.speedCur, data.attrPoints, data.skillPoints, data.eq);
   loadshit();
-  requestAnimationFrame(update);
 });
 socket.on('players-move-update', function(data){
   if(serverDataInitialized){

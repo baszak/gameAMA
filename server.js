@@ -3,7 +3,8 @@ var fs = require('fs');
 var gameloop = require('node-gameloop');
 var findPath = require('./astar_server.js');
 var enums = require('./enums_server.js')
-var weaponTemplates = require('./templates.js');
+var weaponTemplates = require('./templates_server.js');
+console.log(weaponTemplates)
 // var calcLineOfSight = require('./bresenhams_server.js');
 // var Player = require('./player_server.js');
 // var foe = require('./foe_server.js');
@@ -412,6 +413,7 @@ function Player(id, spawn_x, spawn_y) {
         head: {},
         backpack: new Container()
     };
+    this.equipment.backpack.addItem(ifac.getWeaponFromTemplate(1), [0,0]);
 
     console.log(this.chunk[0], this.chunk[1])
     this.update = function() {
