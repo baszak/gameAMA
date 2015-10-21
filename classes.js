@@ -5,29 +5,37 @@ function Map(url, w, h){
   this.img2.src = url || "img/map_16tiles_foreground_resized.png";
   this.img3 = new Image();
   this.img3.src = url || "img/map_16tiles_front_resized.png";
+  this.images = [];
+  for(var i=0; i< 9; i++){
+
+  }
   this.w = w;
   this.h = h;
-  this.x = -49*gh;
-  this.y = -45*gh;
+  this.x = 0;
+  this.y = 0;
+  this.offset_x = (game_size.w/2 * gh);
+  this.offset_y = (game_size.h/2 * gh);
   this.world = [[]];
 	this.update = function(player){
-    if ((player.x+player.ax)*gh + this.x > (game_size.w-5)*gh)
-      this.x = Math.max((game_size.w-5-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
-    if ((player.x+player.ax)*gh + this.x < 4*gh)
-      this.x = Math.min(-(player.x+player.ax-4)*gh,0);
-    if ((player.y+player.ay)*gh + this.y > (game_size.h-5)*gh) 
-      this.y = Math.max((game_size.h-5-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
-    if ((player.y+player.ay)*gh + this.y < 4*gh)
-      this.y = Math.min(-(player.y+player.ay-4)*gh,0);
+    // if ((player.x+player.ax)*gh + this.x > (game_size.w-5)*gh)
+    //   this.x = Math.max((game_size.w-5-player.x-player.ax) * gh, -this.w*gh + game_size.w*gh);
+    // if ((player.x+player.ax)*gh + this.x < 4*gh)
+    //   this.x = Math.min(-(player.x+player.ax-4)*gh,0);
+    // if ((player.y+player.ay)*gh + this.y > (game_size.h-5)*gh) 
+    //   this.y = Math.max((game_size.h-5-player.y-player.ay) * gh, -this.h*gh + game_size.h*gh);
+    // if ((player.y+player.ay)*gh + this.y < 4*gh)
+    //   this.y = Math.min(-(player.y+player.ay-4)*gh,0);
+    this.x = -(player.x+player.ax)*gh + this.offset_x;
+    this.y = -(player.y+player.ay)*gh + this.offset_y;
   }
   this.drawBackground = function(ctx){
     ctx.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
   }
   this.drawForeground = function(ctx){
-    ctx.drawImage(this.img2, this.x, this.y, this.img.width, this.img.height);
+    ctx.drawImage(this.img2, this.x, this.y, this.img2.width, this.img2.height);
   }
   this.drawFront = function(ctx){
-    ctx.drawImage(this.img3, this.x, this.y, this.img.width, this.img.height);
+    ctx.drawImage(this.img3, this.x, this.y, this.img3.width, this.img3.height);
   }
   this.isValid = function(x, y) {
     return (this.world[x][y] == 0);
@@ -52,7 +60,8 @@ function Map(url, w, h){
 	}
 }
 
-function Player(url, id, spawn_x, spawn_y, data_from_server){
+function Player(id, spawn_x, spawn_y, level, experience, name, healthMax, healthCur, manaMax, manaCur, speedCur, attrPoints, skillPoints, eq){ //reminder:remove properti es unused by the client when done rewriting server code.
+  console.log(eq)
   this.img_right = allImages['Rayman_right'];
   this.img_left = allImages['Rayman_left'];
   this.img_down = allImages['Rayman_down'];
@@ -63,215 +72,220 @@ function Player(url, id, spawn_x, spawn_y, data_from_server){
   this.img_run_up = allImages['Rayman_run_up'];
   this.offsetY = this.img_right.spriteY - gh;
   this.animationSpeed = 80;
-  var skillUser = this;
-  this.data = {
-    id: id || 1,
-    name : "Playerino",
-    //player resources
-  	x: spawn_x,
-  	y: spawn_y,
-    tx: spawn_x,
-    ty: spawn_y,
-    direction: 0,
-    //rpg shit
-    level : 1,
-    experience : 0,
-    expPenalty: 0,
-    strength: 1,
-    agility: 1,
-    intelligence : 1,
-    attrPoints: 0,
-    skillPoints: 0,
-    healthMax: 100,
-    healthCur: 100,
-    manaMax: 900,
-    manaCur: 900,
-    healthRegenBase: 100,
-    healthRegen: 100,
-    manaRegen: 300,
-    mmr: 1400,
-    speedBase: 400,
-    speedCur: 400,
-    baseAttackCooldown: 2000,
-        /* percentage */
-        critChanceBase: 0,
-        critChance: 0.5,
-        critDamageBase: 1,
-        critDamage: 1,
-        lifeSteal: 0,
-        lifeStealBase: 0,
-        dmgMod: 1,
-        dmgModBase: 1,
-        atkSpeed: 1,
-        atkSpeedBase: 1,
-        evasion: 0,
-        dmgReflect: 0,
-        dmgReflectBase: 0,
-        blockChance: 0,
-        magicImmunity: 0,
-        magicImmunityBase: 0,
-        physicalImmunity: 0,
-        physicalImmunityBase: 0,
-        /* bools */
-    silenced: false,
-    stunned: false,
-    disarmed: false,
-    stealthed: false,
-    bleeding: false,
-    onFire: false,
-    poisoned: false,
-        //other shit
-    moveValid: 1,
-    isVisible: true,
-    isMeditating: false,
-    limboState: false,
-    dying: false,
-    deathTime: frameTime,
-    moveQ: new MovementQueue(),
-    animStart: frameTime,
-    lastAttack: frameTime,
-    exhausted: 0,
-    buffTimer: 0,
-    damageInfo: {totalDamage: 0},
-    skills: [],
+  this.id = id || 1;
+  this.name  = name || "Playerino";
+  //player resources
+	this.x = spawn_x;
+	this.y = spawn_y;
+  this.tx = spawn_x;
+  this.ty = spawn_y;
+  this.direction = 0;
+  //rpg shit
+  this.level = level || 1;
+  this.experience = experience || 0;
+  this.expPenalty = 0;
+  this.strength = 1;
+  this.agility = 1;
+  this.intelligence = 1;
+  this.attrPoints = 0;
+  this.skillPoints = 0;
+  this.healthMax = healthMax || 300;
+  this.healthCur = healthCur || 300;
+  this.manaMax = manaMax || 900;
+  this.manaCur = manaCur || 900;
+  this.healthRegenBase = 0;
+  this.healthRegen = 2;
+  this.manaRegen = 300;
+  this.mmr = 1400;
+  this.speedBase = 400;
+  this.speedCur = speedCur || 400;
+  this.attackCooldown = 2000;
+    /* percentage */
+    this.critChanceBase = 0;
+    this.critChance = 0.5;
+    this.critDamageBase = 1;
+    this.critDamage = 1;
+    this.lifeSteal = 0;
+    this.lifeStealBase = 0;
+    this.dmgMod = 1;
+    this.dmgModBase = 1;
+    this.atkSpeed = 1;
+    this.atkSpeedBase = 1;
+    this.evasion = 0;
+    this.dmgReflect = 0;
+    this.dmgReflectBase = 0;
+    this.blockChance = 0;
+    this.magicImmunity = 0;
+    this.magicImmunityBase = 0;
+    this.physicalImmunity = 0;
+    this.physicalImmunityBase = 0;
+    /* bools */
+  this.silenced = false;
+  this.stunned = false;
+  this.disarmed = false;
+  this.stealthed = false;
+  this.bleeding = false;
+  this.onFire = false;
+  this.poisoned = false;
+      //other shit
+  this.moveValid = 1;
+  this.isVisible = true;
+  this.isMeditating = false;
+  this.isDead = false;
+  this.dying = false;
+  this.deathTime = frameTime;
+  this.moveQ = new MovementQueue();
+  this.animStart = frameTime;
+  this.lastAttack = frameTime;
+  this.exhausted = 0;
+  this.buffTimer = 0;
+  this.damageInfo = {totalDamage: 0};
+  this.skills = [];
 
-    equipment: {  primary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45},// o()XXXX[{::::::::::::::>
-                  secondary: {damageMin: 1, damageMax: 5, damageMod: 0, dmgOverTime: 0, speedMod: 0, type: "sword", range: 1.45}, // ¤=[]:::;;>
-                  body: {},
-                  legs: {},
-                  boots: {speedMod: 0},
-                  head: {},
-                  backpack: new Container(1000)
-                }
-  }
+
+  // this.createWeapon = function(name, type, level, damageMin, damageMax, damageMod, speedMod, range, hitrateMod, armorPenetration){
+  this.equipment = {
+    primary: eq.primary || 0,
+    secondary: eq.secondary || 0, // ¤=[]:::;;>
+    body: eq.body || 0,
+    legs: eq.legs || 0,
+    boots: eq.boots || 0,
+    head: eq.head || 0,
+    backpack: eq.backpack || 0//default 4x5
+  };
 	this.update = function(){
-    for(var i=0; i<this.data.skills.length; i++){
-      if(this.data.skills[i])
-        this.data.skills[i].update();
+    for(var i=0; i<this.skills.length; i++){ //updating existing skills cooldowns.
+      if(this.skills[i])
+        this.skills[i].update();
     }
-    this.data.ax = (this.data.tx - this.data.x) * (frameTime - this.data.animStart) / this.data.speedCur;
-    this.data.ay = (this.data.ty - this.data.y) * (frameTime - this.data.animStart) / this.data.speedCur;
+    this.ax = (this.tx - this.x) * (frameTime - this.animStart) / this.speedCur;
+    this.ay = (this.ty - this.y) * (frameTime - this.animStart) / this.speedCur;
     
-    if (Math.abs(this.data.ax) >= 1) {
-      this.data.moving = false;
-      this.data.x = this.data.tx;
-      this.data.ax = 0;
+    if (Math.abs(this.ax) >= 1) {
+      this.moving = false;
+      this.x = this.tx;
+      this.ax = 0;
     }
-    if (Math.abs(this.data.ay) >= 1) {
-      this.data.moving = false;
-      this.data.y = this.data.ty;
-      this.data.ay = 0
+    if (Math.abs(this.ay) >= 1) {
+      this.moving = false;
+      this.y = this.ty;
+      this.ay = 0
     }
     
-    if(!this.data.moving) {
-      var nextMove = this.data.moveQ.getMove();
+    if(!this.moving) {
+      var nextMove = this.moveQ.getMove();
       if(nextMove) {
-        if(!map.isValid(nextMove[0], nextMove[1]) && this.data.moveQ.getLength() > 0){
-          this.data.moveQ.findPath(this.data.x, this.data.y, clientX, clientY);
-          nextMove = this.data.moveQ.getMove();
+        if(!map.isValid(nextMove[0], nextMove[1]) && this.moveQ.getLength() > 0){
+          this.moveQ.findPath(this.x, this.y, clientX, clientY);
+          nextMove = this.moveQ.getMove();
         }
         if(nextMove && map.isValid(nextMove[0], nextMove[1])) {
-        socket.emit('player-input-move', {x: nextMove[0]-this.data.tx, y: nextMove[1]-this.data.ty});
-          this.data.animStart = frameTime;
+        socket.emit('player-input-move', {x: nextMove[0]-this.tx, y: nextMove[1]-this.ty});
+          this.animStart = frameTime;
           // this.animationFrame = 0;
-          this.data.moving = true;
-          this.data.tx = nextMove[0];
-          this.data.ty = nextMove[1];
+          this.moving = true;
+          this.tx = nextMove[0];
+          this.ty = nextMove[1];
         }
       }
     }
 
-    // updateStats(this.data);//this comes from the server
-    if(this.data.experience<0) this.data.experience = 0;
+    // updateStats(this);//this comes from the server
+    if(this.experience<0) this.experience = 0;
   }
   this.move = function(dx, dy, dir){
-    if(map.isValid(this.data.tx + dx, this.data.ty + dy))
-      this.data.moveQ.queueMove(this.data.tx + dx, this.data.ty + dy);
+    if(map.isValid(this.tx + dx, this.ty + dy))
+      this.moveQ.queueMove(this.tx + dx, this.ty + dy);
   }
   this.attack = function(){ //autoattacks with primary hand
-    if(!this.data.limboState){
-      if(frameTime - this.data.lastAttack > (this.data.baseAttackCooldown/this.data.atkSpeed * (1 - (this.data.equipment.primary.speedMod + this.data.equipment.secondary.speedMod))) && targetedUnit && dist(this.data, targetedUnit.data)<this.data.equipment.primary.range){
-        socket.emit('player-attack', {id: targetedUnit.data.id, type: targetedUnit.data.type});
-        switch(this.data.equipment.primary.type){
+    if(!this.isDead){
+      if(frameTime - this.lastAttack > (this.attackCooldown/this.atkSpeed * (1 - (this.equipment.primary.speedMod + (this.equipment.secondary.speedMod || 0)))) && targetedUnit && dist(this, targetedUnit)<this.equipment.primary.range){
+        //SERVER
+        console.log('attack')
+
+        socket.emit('player-attack', {id: targetedUnit.id, type: targetedUnit.type});
+
+        //ANIMATIONS
+        switch(this.equipment.primary.type){
           case 'bow':
-            missiles.push(new Projectile(this.data.tx, this.data.ty, targetedUnit.data.tx, targetedUnit.data.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
+            missiles.push(new Projectile(this.tx, this.ty, targetedUnit.tx, targetedUnit.ty, 'arrow_new', 'blood_hit', 'arrow_hit'));
             break;
           case 'sword':
-            missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
+            missiles.push(new AttackAnimation(targetedUnit, this, this.equipment.primary.type));
             break;
           case 'big_sword':
-          missiles.push(new AttackAnimation(targetedUnit.data, this.data, this.data.equipment.primary.type));
+          missiles.push(new AttackAnimation(targetedUnit, this, this.equipment.primary.type));
           break;
         }
 
 
-        this.data.lastAttack = frameTime;
+        this.lastAttack = frameTime;
       }
     }
   }
   this.takeDamage = function(data){
     if(data.dmg>0)
-      entities.newEntity('blood_big', this.data.tx, this.data.ty, 15, 2.5);
-    popups.push(new numberPopup(this.data.tx, this.data.ty, data.dmg, 'damage', 1200));
+      entities.newEntity('blood_big', this.tx, this.ty, 15, 2.5);
+    popups.push(new numberPopup(this.tx, this.ty, data.dmg, 'damage', 1200));
   }
   this.die = function(){
-    this.data.deathTime = new Date().getTime();
-    this.data.isDrugged = false;
+    this.deathTime = new Date().getTime();
+    this.isDrugged = false;
     webFilter.die();
-    this.data.dying = true;
-    this.data.limboState = true;
-    this.data.isVisible = false;
+    this.dying = true;
+    this.isDead = true;
+    this.isVisible = false;
   }
   this.toggleRegen = function(){
-    this.data.isMeditating = !this.data.isMeditating;
+    this.isMeditating = !this.isMeditating;
     socket.emit('player-toggle-regen', {});
   }
 	this.draw = function(ctx){
     this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.img_right.spriteN;
-    if(!this.data.moving)
+    if(!this.moving)
       this.animationFrame_run = 0;
     else
       this.animationFrame_run = Math.floor(frameTime/ this.animationSpeed)%this.img_run_right.spriteN;
 
-      if(this.data.x < this.data.tx)//right  make enums of this shit
-        this.data.direction = 2;
-      else if(this.data.x > this.data.tx)//left
-        this.data.direction = 1;
-      else if(this.data.y < this.data.ty)//down
-        this.data.direction = 0;
-      else if(this.data.y > this.data.ty)//up
-        this.data.direction = 3;
+      if(this.x < this.tx)//right  make enums of this shit
+        this.direction = 2;
+      else if(this.x > this.tx)//left
+        this.direction = 1;
+      else if(this.y < this.ty)//down
+        this.direction = 0;
+      else if(this.y > this.ty)//up
+        this.direction = 3;
     
-    if(!this.data.moving){
-      if(this.data.direction == 2)
-        ctx.drawImage(this.img_right, this.animationFrame * this.img_right.spriteX, 0, this.img_right.spriteX, this.img_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_right.spriteX, this.img_right.spriteY);
-      else if(this.data.direction == 1)
-        ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
-      else if(this.data.direction == 0)
-        ctx.drawImage(this.img_down, this.animationFrame * this.img_down.spriteX, 0, this.img_down.spriteX, this.img_down.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_down.spriteX, this.img_down.spriteY);
-      else if(this.data.direction == 3)
-        ctx.drawImage(this.img_up, this.animationFrame * this.img_up.spriteX, 0, this.img_up.spriteX, this.img_up.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_up.spriteX, this.img_up.spriteY);
+    if(!this.moving){
+      if(this.direction == 2)
+        ctx.drawImage(this.img_right, this.animationFrame * this.img_right.spriteX, 0, this.img_right.spriteX, this.img_right.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_right.spriteX, this.img_right.spriteY);
+      else if(this.direction == 1)
+        ctx.drawImage(this.img_left, this.animationFrame * this.img_left.spriteX, 0, this.img_left.spriteX, this.img_left.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_left.spriteX, this.img_left.spriteY);
+      else if(this.direction == 0)
+        ctx.drawImage(this.img_down, this.animationFrame * this.img_down.spriteX, 0, this.img_down.spriteX, this.img_down.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_down.spriteX, this.img_down.spriteY);
+      else if(this.direction == 3)
+        ctx.drawImage(this.img_up, this.animationFrame * this.img_up.spriteX, 0, this.img_up.spriteX, this.img_up.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_up.spriteX, this.img_up.spriteY);
 
     }
     else{
-      if(this.data.direction == 2)
-        ctx.drawImage(this.img_run_right, this.animationFrame_run * this.img_run_right.spriteX, 0, this.img_run_right.spriteX, this.img_run_right.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_right.spriteX, this.img_run_right.spriteY);
-      else if(this.data.direction == 1)
-        ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
-      else if(this.data.direction == 0)
-        ctx.drawImage(this.img_run_down, this.animationFrame_run * this.img_run_down.spriteX, 0, this.img_run_down.spriteX, this.img_run_down.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_down.spriteX, this.img_run_down.spriteY);
-      else if(this.data.direction == 3)
-        ctx.drawImage(this.img_run_up, this.animationFrame_run * this.img_run_up.spriteX, 0, this.img_run_up.spriteX, this.img_run_up.spriteY, (this.data.x+this.data.ax)*gh, (this.data.y+this.data.ay)*gh - this.offsetY, this.img_run_up.spriteX, this.img_run_up.spriteY);
+      if(this.direction == 2)
+        ctx.drawImage(this.img_run_right, this.animationFrame_run * this.img_run_right.spriteX, 0, this.img_run_right.spriteX, this.img_run_right.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_run_right.spriteX, this.img_run_right.spriteY);
+      else if(this.direction == 1)
+        ctx.drawImage(this.img_run_left, this.animationFrame_run * this.img_run_left.spriteX, 0, this.img_run_left.spriteX, this.img_run_left.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_run_left.spriteX, this.img_run_left.spriteY);
+      else if(this.direction == 0)
+        ctx.drawImage(this.img_run_down, this.animationFrame_run * this.img_run_down.spriteX, 0, this.img_run_down.spriteX, this.img_run_down.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_run_down.spriteX, this.img_run_down.spriteY);
+      else if(this.direction == 3)
+        ctx.drawImage(this.img_run_up, this.animationFrame_run * this.img_run_up.spriteX, 0, this.img_run_up.spriteX, this.img_run_up.spriteY, (this.x+this.ax)*gh, (this.y+this.ay)*gh - this.offsetY, this.img_run_up.spriteX, this.img_run_up.spriteY);
 
     }
 
-    if(!this.data.isDead){ //draw healthbar
+    if(!this.isDead){ //draw healthbar
       ctx.fillStyle = '#FF371D';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
+      ctx.fillRect((this.x+this.ax)*gh + gh/6, (this.y+this.ay)*gh - this.offsetY, 24, 3);
       ctx.fillStyle = '#87E82B';
-      ctx.fillRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24 * (this.data.healthCur/this.data.healthMax), 3);
+      ctx.fillRect((this.x+this.ax)*gh + gh/6, (this.y+this.ay)*gh - this.offsetY, 24 * (this.healthCur/this.healthMax), 3);
       ctx.strokeStyle = '#000';
-      ctx.strokeRect((this.data.x+this.data.ax)*gh + gh/6, (this.data.y+this.data.ay)*gh - this.offsetY, 24, 3);
+      ctx.strokeRect((this.x+this.ax)*gh + gh/6, (this.y+this.ay)*gh - this.offsetY, 24, 3);
     }
 	}
 }
@@ -286,7 +300,7 @@ function AudioManager(){
   this.update = function(){
     for(var i = 0; i<loc_audios.length; i++) {
       var entry = loc_audios[i];
-      if(isPointWithin(entry.area,player1.data) && !entry.active){
+      if(isPointWithin(entry.area,player1) && !entry.active){
         entry.audio.play();
         if(!entry.oneshot)
           fadeOut(entry.audio, 'volume', 0, 1, 5000);
@@ -294,7 +308,7 @@ function AudioManager(){
           entry.audio.currentTime = 0;
         entry.active = true;
       }
-      else if (!isPointWithin(entry.area,player1.data) && entry.active){
+      else if (!isPointWithin(entry.area,player1) && entry.active){
         if(!entry.oneshot){
           fadeOut(entry.audio, 'volume', 1, 0, 3000, function(a){return function(){a.pause();}}(entry.audio));
         }
@@ -305,21 +319,22 @@ function AudioManager(){
 }
 
 function ExperienceBar(){
-  this.img = new Image();
-  this.img.src = 'img/fullxpBar.png';
+  this.img = allImages['xp_bar_new'];
+  this.expPercent = 0;
+
   this.update = function(){
-  this.expPercent = ((player1.data.experience - levelExpFormula(player1.data.level))/levelUpFormula(player1.data.level+1));
+  this.expPercent = ((player1.experience - levelExpFormula(player1.level))/levelUpFormula(player1.level+1));
     if(this.expPercent < 0) this.expPercent = 0;
-    if(player1.data.experience >= levelExpFormula(player1.data.level+1)){
-      levelUp(player1.data);
+    if(player1.experience >= levelExpFormula(player1.level+1)){
+      levelUp(player1);
     }
-    else if(player1.data.experience < levelExpFormula(player1.data.level)){
-      levelDown(player1.data);
+    else if(player1.experience < levelExpFormula(player1.level)){
+      levelDown(player1);
     }
   }
 
   this.draw = function(ctx){
-    ctx.drawImage(this.img, 0, 0, 539*this.expPercent/0.8, 10, canvas.width/2-271, canvas.height-77, 539*this.expPercent, 9)
+    ctx.drawImage(this.img, 0, 0, this.img.spriteX*this.expPercent, this.img.spriteY, 228, canvas.height - 71, this.img.spriteX*this.expPercent, this.img.spriteY)
   }
 }
 
@@ -328,22 +343,41 @@ function ActionBar(){
   this.bar_new = allImages['action_bar_new'];
   this.hp_full  = allImages['hp_full'];
   this.mana_full  = allImages['mana_full'];
-  this.skill1 = allImages['skill_' + player1.data.equipment.primary.type];
-  this.skill1_cd = allImages['skill_' + player1.data.equipment.primary.type + '_cd'] || this.skill1;
-
+  this.skill1 = allImages['skill_' + player1.equipment.primary.type];
+  this.skill1_cd = allImages['skill_' + player1.equipment.primary.type + '_cd'] || this.skill1;
+  this.update = function(ctx) {
+    this.skill1 = allImages['skill_' + player1.equipment.primary.type];
+    this.skill1_cd = allImages['skill_' + player1.equipment.primary.type + '_cd'] || this.skill1;
+  };
   this.draw = function(ctx){
-    ctx.drawImage(this.skill1, 0 , canvas.height-50, this.skill1.spriteX, this.skill1.spriteY);
-    // ctx.drawImage(this.img_01_cd, 0, 248*(frameTime-player1.data.skills[0].cooldown+2000)/2000, 248, -248*(frameTime-player1.data.skills[0].cooldown)/2000, canvas.width/2-262, 38*(frameTime-player1.data.skills[0].cooldown+2000)/2000+canvas.height-59, 38, -38*(frameTime-player1.data.skills[0].cooldown)/2000);
-    // ctx.drawImage(this.img_01_cd, 0, 0, 248, 248*(frameTime-player1.data.exhausted+1000)/1000, canvas.width/2-262, canvas.height-59, 38, 38*(frameTime-player1.data.exhausted+1000)/1000);
-    // ctx.drawImage(this.img_01_cd, 0, 0, 248, -248*(frameTime-player1.data.exhausted)/2000, canvas.width/2-262, (canvas.height-59), 38, -38*(frameTime-player1.data.exhausted)/2000);
-    //dont delete those
-    // ctx.drawImage(this.img_border, canvas.width/2-262, canvas.height-59, 38, 38);
+
+    //HP & MANA
     ctx.drawImage(this.bar_new, 0 , canvas.height-256, 1024, 256);
-    this.hpPercent = (player1.data.healthCur/player1.data.healthMax)*130;
+    this.hpPercent = (player1.healthCur/player1.healthMax)*130;
     ctx.drawImage(this.hp_full, 0, 0, this.hpPercent, 16, 87 , canvas.height-45, this.hpPercent, 16);
-    this.manaPercent = (player1.data.manaCur/player1.data.manaMax)*130;
+    this.manaPercent = (player1.manaCur/player1.manaMax)*130;
     ctx.drawImage(this.mana_full, 0, 0, this.manaPercent, 16, 87 , canvas.height-22, this.manaPercent, 16, 16);
-  }
+
+    //hotbar skills drawing
+    ctx.drawImage(this.skill1, 243, canvas.height-51, this.skill1.spriteX, this.skill1.spriteY);
+
+    //player1.skills drawing
+    
+    // for(var i = 0, var img = 0; i < player1.skills.length; i++){
+    //   img = allImages[player1.skills[i].name]
+    //   ctx.drawImage(img, 243 + i*48, canvas.height -51, img.spriteX, img.spriteY)
+    // };
+
+    if(frameTime - player1.lastAttack < player1.attackCooldown){
+      this.part1 = (player1.lastAttack - frameTime + player1.attackCooldown) / player1.attackCooldown; //1->0
+      this.part2 = (frameTime - player1.lastAttack) / player1.attackCooldown; // 0->1
+
+      ctx.drawImage(this.skill1_cd, 0, 32*this.part2, 32, 32*this.part1, 243, 32*this.part2 + canvas.height-51, 32, 32*this.part1) //DEFAULT - draws full and slides down.
+      // ctx.drawImage(this.skill1_cd, 243,canvas.height-51, this.skill1.spriteX, this.skill1.spriteY); //normal cd image no animation
+      // ctx.drawImage(this.skill1_cd, 0, 32*this.part1, 32, -32*this.part1, 243, 32*this.part1 + canvas.height-51, 32, -32*this.part1) //draws full first, and slides up in time T
+      // ctx.drawImage(this.skill1_cd, 0, 32*this.part2, 32, -32*this.part2, 243, 32*this.part2 + canvas.height-51, 32, -32*this.part2) //just draws anim down from 0 in time T
+    }
+  };
 }
 
 function numberPopup(unit_x, unit_y, content, type, duration){
@@ -487,16 +521,16 @@ function FilterManager(){
   this.die = function(){
     console.log('dying')
     if(this.val1 != 1){
-      this.val1 = (Math.floor(frameTime - player1.data.deathTime)%this.fadeTime)/this.fadeTime;
+      this.val1 = (Math.floor(frameTime - player1.deathTime)%this.fadeTime)/this.fadeTime;
       this.val2 = 1 - 0.3*this.val1;
     }
       canvas.style.cssText="-webkit-filter:grayscale("+this.val1+") brightness("+this.val2+")";
       if(this.val1.toFixed(3) > 0.99)
-        player1.data.dying = false;
+        player1.dying = false;
   }
   this.clearFilters = function(){
     canvas.style.cssText="-webkit-filter:none";
-    player1.data.isDrugged = false;
+    player1.isDrugged = false;
   }
 }
 function EntityManager(){
@@ -505,6 +539,9 @@ function EntityManager(){
   this.newEntity = function(img_name, x, y, decay_time, fade_time){
     this.allEntities.push( new Entity(img_name, x, y, decay_time, fade_time) );
       
+  }
+  this.newFloorEntity = function(){
+
   }
   this.clearEntities = function(){
     this.curId = 0;
@@ -531,7 +568,7 @@ function Entity(img_name, x, y, decay_time, fade_time){
   this.spriteY = allImages[img_name].spriteY || 0;
   this.offsetX = allImages[img_name].offsetX || 0;
   this.offsetY = allImages[img_name].offsetY || 0;
-  this.spritePart = Math.floor(Math.random()*100)%allImages[img_name].spriteN;
+  this.spritePart = Math.floor(Math.random()*100)%allImages[img_name].spriteN; //random part of the image
   this.draw = function(ctx){
     if(this.decayTime && this.fadeTime && frameTime > (this.startTime + this.decayTime - this.fadeTime)){
       ctx.globalAlpha = (this.startTime + this.decayTime - frameTime)/ this.fadeTime;

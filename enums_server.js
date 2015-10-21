@@ -1,5 +1,4 @@
-var enums = {
-
+module.exports = {
   skillType : {
     INSTANT: 0,
     PASSIVE: 1,
@@ -63,10 +62,14 @@ var enums = {
     BACKPACK: 10,
     GOLD: 11,
     SKILL: 12
-  },
+  }
 }
+  // if(Object.freeze){
+  //   Object.freeze(skillType);
+  //   Object.freeze(skillEffect);
+  //   Object.freeze(skillTarget);
+  //   Object.freeze(objType);
+  //   Object.freeze(itemType);
+  // }else console.log('Object.freeze is not supported')
 
 
-if(Object.freeze){
-  Object.freeze(enums);
-}else console.log('nie bangla')

@@ -76,6 +76,18 @@ input:focus {
   box-shadow: 0 0 3px #000;
   opacity: 0.8;
 }
+.globalTooltip .exp{
+  border: 2px solid #676a5a;
+  background-color: #181913;
+  color: #676a5a;
+  position: absolute;
+  z-index: 9999;
+  font-family: Verdana;
+  font-size: 10px;
+  padding:2px;
+  box-shadow: 0 0 3px #000;
+  opacity: 0.8;
+}
 
 .window {
   position: absolute;

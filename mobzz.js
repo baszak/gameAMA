@@ -1,50 +1,48 @@
 function Mob(id, tx, ty, healthMax, healthCur, speed, name){
   this.img = allImages[name] || allImages['placeholder'];
-  this.data = {
-    id: id,
-    name: name,
-    type: objType.MOB,
-    x: tx,
-    y: ty,
-    tx: tx,
-    ty: ty,
-    healthMax: healthMax,
-    healthCur: healthCur,
-    speed: speed,
-    animStart: frameTime,
-    moving: false,
-    animationSpeed: 200,
-    spriteX: this.img.spriteX || 84,
-    spriteY: this.img.spriteY || 84,
-    spriteN: this.img.spriteN || 8,
-    isVisible: true
-  }
-  this.lastTime = frameTime;
+    this.id = id;
+    this.name = name;
+    this.type = objType.MOB;
+    this.x = tx;
+    this.y = ty;
+    this.tx = tx;
+    this.ty = ty;
+    this.healthMax = healthMax;
+    this.healthCur = healthCur;
+    this.speed = speed;
+    this.animStart = frameTime;
+    this.moving = false;
+    this.animationSpeed = 200;
+    this.spriteX = this.img.spriteX || 84;
+    this.spriteY = this.img.spriteY || 84;
+    this.spriteN = this.img.spriteN || 8;
+    this.isVisible = true;
+    this.lastTime = frameTime;
   this.update = function(){
-    this.data.x += Math.sign(this.data.tx-this.data.x) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.tx-this.data.x));
-    this.data.y += Math.sign(this.data.ty-this.data.y) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.data.ty-this.data.y));
+    this.x += Math.sign(this.tx-this.x) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.tx-this.x));
+    this.y += Math.sign(this.ty-this.y) * Math.min((frameTime - this.lastTime)/speed, Math.abs(this.ty-this.y));
 
     this.lastTime = frameTime;
   }
   this.draw = function(ctx){
-    this.animationFrame = Math.floor(frameTime / this.data.animationSpeed)%this.data.spriteN;
-    ctx.drawImage(this.img, this.animationFrame*this.data.spriteX, 0, this.data.spriteX, this.data.spriteY, (this.data.x)*gh, (this.data.y)*gh, gh, gh);
+    this.animationFrame = Math.floor(frameTime / this.animationSpeed)%this.spriteN;
+    ctx.drawImage(this.img, this.animationFrame*this.spriteX, 0, this.spriteX, this.spriteY, (this.x)*gh, (this.y)*gh, gh, gh);
     if(this.isTargeted){
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-      ctx.strokeRect((this.data.x)*gh, (this.data.y)*gh, gh, gh);
+      ctx.strokeRect((this.x)*gh, (this.y)*gh, gh, gh);
     }
-    if(this.data.isVisible){
+    if(this.isVisible){
       drawHealthBar(this);
     }
   }
   this.takeDamage = function(damage){
     if(damage>0)
-      entities.newEntity('blood_big', this.data.tx, this.data.ty, 15, 2.5);
-    popups.push(new numberPopup(this.data.tx, this.data.ty, damage, 'damage', 1200));
+      entities.newEntity('blood_big', this.tx, this.ty, 15, 2.5);
+    popups.push(new numberPopup(this.tx, this.ty, damage, 'damage', 1200));
   }
   this.die = function(){
-    if(targetedUnit && targetedUnit.data.id == this.data.id)
+    if(targetedUnit && targetedUnit.id == this.id)
       targetedUnit = null;
-    delete mobzz[this.data.id];
+    delete mobzz[this.id];
   }
 }

@@ -140,11 +140,11 @@ function levelExpFormula(level){//
 }
 function drawHealthBar(obj){
   ctx.fillStyle = '#FF371D';
-  ctx.fillRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
+  ctx.fillRect((obj.x)*gh + gh/6, (obj.y)*gh -gh/6, 24, 3);
   ctx.fillStyle = '#87E82B';
-  ctx.fillRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24 * (obj.data.healthCur/obj.data.healthMax), 3);
+  ctx.fillRect((obj.x)*gh + gh/6, (obj.y)*gh -gh/6, 24 * (obj.healthCur/obj.healthMax), 3);
   ctx.strokeStyle = '#000';
-  ctx.strokeRect((obj.data.x)*gh + gh/6, (obj.data.y)*gh -gh/6, 24, 3);
+  ctx.strokeRect((obj.x)*gh + gh/6, (obj.y)*gh -gh/6, 24, 3);
 }
 function teleportManager(){
   this.teleportList = [];
@@ -189,63 +189,89 @@ function calcLineOfSight (start_x, start_y, end_x, end_y) {
   return {isClear: true};
 }
 function OtherPlayer(id, name, level, pos_x, pos_y, healthMax, healthCur, speedCur, img_name, limboState){
-	this.data = {
-		id: id,
-    type: objType.PLAYER,
-		name: name,
-		level: level,
-		x: pos_x,
-		y: pos_y,
-		tx: pos_x,
-		ty: pos_y,
-		direction: 0,
-		animStart: frameTime,
-		moving: false,
-		speedCur: speedCur,
-		limboState: limboState,
-		healthMax: healthMax,
-		healthCur: healthCur,
-		isDead: false,
-		isVisible: true,
-		isTargeted: false
-	}
+	this.id = id;
+  this.type = objType.PLAYER;
+	this.name = name;
+	this.level = level;
+	this.x = pos_x;
+	this.y = pos_y;
+	this.tx = pos_x;
+	this.ty = pos_y;
+	this.direction = 0;
+	this.animStart = frameTime;
+	this.moving = false;
+	this.speedCur = speedCur;
+	this.limboState = limboState;
+	this.healthMax = healthMax;
+	this.healthCur = healthCur;
+	this.isDead = false;
+	this.isVisible = true;
+	this.isTargeted = false;
   this.lastTime = frameTime;
 	this.update = function(){
 
-		this.data.x += Math.sign(this.data.tx-this.data.x) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.data.tx-this.data.x));
-    this.data.y += Math.sign(this.data.ty-this.data.y) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.data.ty-this.data.y));
+		this.x += Math.sign(this.tx-this.x) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.tx-this.x));
+    this.y += Math.sign(this.ty-this.y) * Math.min((frameTime - this.lastTime)/speedCur, Math.abs(this.ty-this.y));
 
-    if(this.data.healthCur <=0){
+    if(this.healthCur <=0){
       this.die();
     }
 
     this.lastTime = frameTime;
 	}
 	this.draw = function(ctx){
-		if(this.data.x < this.data.tx)
-        this.data.direction = 3;
-      else if(this.data.x > this.data.tx)
-        this.data.direction = 2;
-      else if(this.data.y < this.data.ty)
-        this.data.direction = 0;
-      else if(this.data.y > this.data.ty)
-        this.data.direction = 1;
+		if(this.x < this.tx)
+        this.direction = 3;
+      else if(this.x > this.tx)
+        this.direction = 2;
+      else if(this.y < this.ty)
+        this.direction = 0;
+      else if(this.y > this.ty)
+        this.direction = 1;
     
-    if(this.data.isVisible && this.data.id != player1.data.id){
-    	ctx.drawImage(allImages[img_name], (this.data.x)*gh, (this.data.y)*gh, gh, gh);
+    if(this.isVisible && this.id != player1.id){
+    	ctx.drawImage(allImages[img_name], (this.x)*gh, (this.y)*gh, gh, gh);
       drawHealthBar(this);
     }
     if(this.isTargeted){
       ctx.strokeStyle = "rgba(255, 0, 0, 1)";
-      ctx.strokeRect((this.data.x)*gh, (this.data.y)*gh, gh, gh);
+      ctx.strokeRect((this.x)*gh, (this.y)*gh, gh, gh);
     }
 	}
   this.takeDamage = function(attackerId, damage) {
     if(damage>0)
-      entities.newEntity('blood_big', this.data.tx, this.data.ty, 15, 2.5);
-    popups.push(new numberPopup(this.data.tx, this.data.ty, damage, 'damage', 1200));
+      entities.newEntity('blood_big', this.tx, this.ty, 15, 2.5);
+    popups.push(new numberPopup(this.tx, this.ty, damage, 'damage', 1200));
   }
   this.die = function(){
-    delete otherPlayers[this.data.id];
+    delete otherPlayers[this.id];
   }
 }
+function Inventory(player){
+  this.div = $('#win1 .content .slot');
+  this.x = this.div.attr("size_x");
+  this.y = this.div.attr("size_y");
+  this.populate = function(container) {
+    while (this.div[0].firstChild) {
+    this.div[0].removeChild(this.div[0].firstChild);
+  }
+    var item = 0;
+    var newChild = 0;
+    for(var i=0; i< this.x; i++){
+      for(var j=0; j< this.y; j++){
+        console.log(container[i][j])
+        item = container[i][j];
+        if(item){
+          newChild = document.createElement('img');
+          $(newChild).makeItem(1, 1, this.div, i, j, item.id, urlDict[item.name].src);
+
+        }
+      }
+    }
+  };
+}
+// testing into console.
+// var inv = new Inventory(player1);
+// player1.equipment.backpack.addItem(ifac.createWeapon(5), [0, 1]);
+// player1.equipment.backpack.addItem(ifac.createArmor(5), [0, 0]);
+// inv.populate(player1.equipment.backpack.contents)

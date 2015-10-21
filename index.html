@@ -5,13 +5,15 @@
 	<link type="text/css" rel="stylesheet" href="style.css" />
 </head>
 <body bgcolor = '272822'>
-	<div id='c1' style="position:relative; top:10px; width: 1024px; margin: 0 auto;">
+	<div id='c1' style="position:relative; top:10px; width: 1024px; margin: 0 auto; z-index: 10">
+		<div class='bar' id='expbar' style="position:absolute; z-index: 11"></div>
 		<canvas id="game" style=""></canvas>
 		<img id="img2" src="img/gradient_border.png" style="position:absolute; left:0; top:0;">
 	</div>
 	<script src="node_modules/socket.io-1.3.5.js"></script>
-	<script type="text/javascript" src="jquery-2.1.1.min.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script type="text/javascript" src="enums.js"></script>
+	<script type="text/javascript" src="templates.js"></script>
 	<script type="text/javascript" src="imageRepo.js"></script>
 	<script type="text/javascript" src="utils.js"></script>
 	<script type="text/javascript" src="items.js"></script>
@@ -21,49 +23,52 @@
 	<script type="text/javascript" src="mobzz.js"></script>
 	<script type="text/javascript" src="skills.js"></script>
 	<script type="text/javascript" src="game.js"></script>
-  <script type="text/javascript" src="gui.js"></script>
-  <div class='window' id='win1'></div>
+	<script type="text/javascript" src="gui.js"></script>
+	
+	<div class='window' id='win1'></div>
 	<div class='window' id='win2'></div>
-
 	<div class='window' id='win3'></div>
 	<div class='window' id='win4'></div>
 	<div class='window' id='win5'></div>
 
-<img src='img/item1.gif' id='item1'>
-<img src='img/items/sword_2x3_big.png' id='item2'>
-<img src='img/item3.png' id='item3'>
-<img src='img/item4.gif' id='item4'>
-<div id='playereq'>
-<div id='eq_helm' style='left:100px;top:0;' class='slot' size_x=2 size_y=2></div>
-<div id='eq_body' style='left:100px;top:80px;' class='slot' size_x=2 size_y=3></div>
-<div id='eq_lhand' style='left:20px;top:80px;' class='slot' size_x=2 size_y=3></div>
-<div id='eq_rhand' style='left:180px;top:80px;' class='slot' size_x=2 size_y=3></div>
-<div id='eq_legs' style='left:100px;top:190px;' class='slot' size_x=2 size_y=2></div>
-<div id='eq_boots' style='left:100px;top:270px;' class='slot' size_x=2 size_y=1></div>
-</div>
+	<!-- <img src='img/item1.gif' id='item1'> -->
+	<img src='img/items/sword_2x3_big.png' id='item2'>
+	<img src='img/item3.png' id='item3'>
+	<img src='img/item4.gif' id='item4'>
+
+	<div id='playereq'>
+		<div id='eq_helm' style='left:100px;top:0;' class='slot' size_x=2 size_y=2></div>
+		<div id='eq_body' style='left:100px;top:80px;' class='slot' size_x=2 size_y=3></div>
+		<div id='eq_lhand' style='left:20px;top:80px;' class='slot' size_x=2 size_y=3></div>
+		<div id='eq_rhand' style='left:180px;top:80px;' class='slot' size_x=2 size_y=3></div>
+		<div id='eq_legs' style='left:100px;top:190px;' class='slot' size_x=2 size_y=2></div>
+		<div id='eq_boots' style='left:100px;top:270px;' class='slot' size_x=2 size_y=1></div>
+	</div>
+
 <script>
-  $("#win1").makeWindow({
-    onclose: function(){
-      alert();
-    }
-  });
-  $("#win2").makeWindow({resizable: false, title: "Equipment", width: 280, height: 320});
-  $("#win1").changeWindowProp({title: "Backpack"});
-  $("#win1").changeWindowProp({content: "<div class='slot' size_x=12 size_y=6></div>"});
-  
-  $("#win3").makeWindow({resizable: false, title: "Welcome!", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='button' value='LOG IN' style='margin:8px;'><br><input type='button' value='CREATE NEW CHARACTER' onclick='popwindow4()' style='margin:0px;'></center>"});
+	$("#expbar").makeProgressBar(228, 441, 567, 8); //default experience bar
+	$("#win1").makeWindow({
+	onclose: function(){
+	  alert();
+	}
+	});
+	$("#win2").makeWindow({resizable: false, title: "Equipment", width: 280, height: 320});
+	$("#win1").changeWindowProp({title: "Backpack"});
+	$("#win1").changeWindowProp({content: "<div class='slot' size_x=4 size_y=5></div>"});
+
+	$("#win3").makeWindow({resizable: false, title: "Welcome!", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='button' value='LOG IN' style='margin:8px;'><br><input type='button' value='CREATE NEW CHARACTER' onclick='popwindow4()' style='margin:0px;'></center>"});
     function popwindow4(){
 	  $("#win5").makeWindow({resizable: false, title: "Create Character", width: 220, height: 160, content: "<center><input type='text' placeholder='LOGIN'><input type='password' placeholder='PASSWORD'><input type='password' placeholder='REPEAT PASSWORD'><input type='button' value='CREATE' id='new_char' style='margin:0px;'></center>"})
 	  			.css({top: 200, left: 600});
 	}
 
 	$("#win2").changeWindowProp({content: $("#playereq")});
-	$(".slot").makeContainter();
+	$(".slot").makeContainer();
 
-    $("#item1").makeItem(1,1,$($(".slot")[0]));
-    $("#item2").makeItem(2,3,$($(".slot")[0]));
-    $("#item3").makeItem(2,2,$($(".slot")[0]));
-	$("#item4").makeItem(2,3,$($(".slot")[0]));
+    // $("#item1").makeItem(1,1,$($(".slot")[0]));//sword
+    $("#item2").makeItem(2,3,$($(".slot")[3]));//
+    $("#item3").makeItem(2,2,$($(".slot")[1]));//helm
+	$("#item4").makeItem(2,3,$($(".slot")[2]));//
 	$("#win4").makeWindow({title: "Skills"});
 	$("#win4").changeWindowProp({content: "<img src='http://i.ytimg.com/vi/bOzpup-zMZ8/maxresdefault.jpg' id ='map'>"});
 	var scale = 1;
@@ -124,8 +129,6 @@
 	    $(".ctx_menu").hide();
 	  });
 	});
-	// for(var i=0; i<4; i++)
-	// 	$('#win' + (i+1)).css({ "top": 32*i + "px", "left": "0px" });
 	$('#win1').css({top:0, left: 0});
 	$('#win2').css({top: 0, left: 1315});
 	$('#win4').css({top: 361, left: 1315});

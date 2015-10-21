@@ -38,12 +38,19 @@ var urlDict = {
   'stomp': {src: 'img/skills/stomp.png', spriteX: 96, spriteY: 96, spriteN: 1, offsetX: 32, offsetY: 32},
   'tp_static': {src: 'img/tp_static.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'action_bar_new': {src: 'img/actionbar/a_bar_new.png', spriteX: 1024, spriteY: 256, spriteN: 1},
+  'xp_bar_new': {src: 'img/actionbar/xp_bar_new.png', spriteX: 568, spriteY: 8, spriteN: 1},
   'hp_full': {src: 'img/actionbar/hp_bar_full.png', spriteX: 130, spriteY: 16, spriteN: 1},
   'mana_full': {src: 'img/actionbar/mana_bar_full.png', spriteX: 130, spriteY: 16, spriteN: 1},
+
+  //ITEMS
+  'sword' : {src: 'img/items/epee.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'armor' : {src: 'img/items/armor.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'Lightsaber' : {src: 'img/items/green_jedi_sword.png', spriteX: 32, spriteY: 32, spriteN: 1},
 
   //SKILLS
   'skill_sword': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'skill_sword_cd': {src: 'img/skills/skill_tiles/skill_sword_cd.png', spriteX: 32, spriteY: 32, spriteN: 1},
+  'skill_bow_cd': {src: 'img/skills/skill_tiles/skill_bow_cd.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'skill_bow': {src: 'img/skills/skill_tiles/skill_bow.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'skill_bleeding': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1},
   'skill_heal': {src: 'img/skills/skill_tiles/skill_sword.png', spriteX: 32, spriteY: 32, spriteN: 1}

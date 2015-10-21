@@ -131,7 +131,7 @@
     return this;
   };
   
-   $.fn.makeContainter = function(size_x, size_y) {
+   $.fn.makeContainer = function(size_x, size_y) {
     this.each(function() {
       var div = $( this );
       var size_x = div.attr("size_x")||size_x;
@@ -207,7 +207,7 @@
     return this;
   };
   
-  $.fn.makeItem = function(size_x, size_y, parent, pos_x, pos_y) {
+  $.fn.makeItem = function(size_x, size_y, parent, pos_x, pos_y, id, src) {
     this.each(function() {
       var div = $( this );
       div.prop("draggable", true);
@@ -217,6 +217,8 @@
         width: size_x*32,
         height: size_y*32
       });
+      div.attr("src", src);
+      div.attr("id", id);
       div.addClass("item");
       div[0].ondragstart = function(ev) {
         ev.dataTransfer.setData("text", ev.target.id);
@@ -266,6 +268,42 @@
       for(var i = 0; i < size_x; i ++) for(var j = 0; j < size_y; j ++) {
         parent[0].data[(pos_x||0)+i][(pos_y||0)+j] = 1;
       }    
+    });
+    return this;
+  };
+  $.fn.makeProgressBar = function(pos_x, pos_y, size_x, size_y){
+    this.each(function() {
+      var div = $(this);
+      div.prop("draggable", false);
+      div.css({
+        width: (size_x || 100),
+        height: (size_y || 10),
+        left: (pos_x || 0),
+        top: (pos_y || 0)
+      });
+
+      div.addClass("bar");
+      div.mouseover(function(ev){
+        clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();     
+      });
+      div.mousemove(function(ev){
+        clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();
+         _globalTooptipTO = setTimeout(function(){
+          _globalTooltip.css({
+            width: 80,
+            height: 8,
+            left: ev.clientX + 10,
+            top: ev.clientY + 10
+          }).show();
+          _globalTooltip.html("<div style='font-weight:bold'>" + (experienceBar.expPercent*100).toFixed(2) + "%</div>");
+        },500);
+      });
+      div.mouseout(function(){
+          clearTimeout(_globalTooptipTO);
+        _globalTooltip.hide();
+      });
     });
     return this;
   };
